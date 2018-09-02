@@ -1,0 +1,26 @@
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+</head>
+<h1>goproxy.io</h1>
+
+<p>A global proxy for go modules.</p>
+
+
+<p>First, you will need to enable the Go Modules feature and configure Go to use the proxy.</p>
+
+<h4>Bash:</h4>
+<pre>export GOPROXY=https://goproxy.io</pre>
+
+<h4>PowerShell:</h4>
+<pre>$env:GOPROXY = "https://goproxy.io"</pre>
+
+<p>Now, when you build and run your applications, go will fetch dependencies via goproxy.io.</p>
+
+<p>
+<i>Note: this proxy can't fetch your private repos of course.</i>
+<br>
+<i>Mail: admin@goproxy.io</i>
+</p>
