@@ -1,7 +1,7 @@
 
 # GOPROXY
 
-A global proxy for go modules.
+A global proxy for go modules. see: [goproxy.io](https://goproxy.io)
 
 ## Build
 
