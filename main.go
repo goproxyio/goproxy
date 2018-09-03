@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +14,12 @@ import (
 )
 
 var cacheDir string
+var listen string
+
+func init() {
+	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
+	flag.Parse()
+}
 
 func main() {
 	gp := os.Getenv("GOPATH")
@@ -21,7 +28,7 @@ func main() {
 	}
 	cacheDir = filepath.Join(gp, "pkg", "mod", "cache", "download")
 	http.Handle("/", mainHandler(http.FileServer(http.Dir(cacheDir))))
-	err := http.ListenAndServe(":8081", nil)
+	err := http.ListenAndServe(listen, nil)
 	if nil != err {
 		panic(err)
 	}
