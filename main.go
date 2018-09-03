@@ -103,6 +103,7 @@ func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := cmd.Wait(); err != nil {
+		fmt.Fprintf(os.Stdout, "goproxy: download %s stdout: %s stderr: %s\n", path, string(bytesOut), string(bytesErr))
 		return err
 	}
 	out := fmt.Sprintf("%s", bytesErr)
@@ -124,7 +125,5 @@ func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request)
 			http.Redirect(w, r, url, 302)
 		}
 	}
-
-	fmt.Fprintf(os.Stdout, "goproxy: download %s stdout: %s stderr: %s\n", path, string(bytesOut), string(bytesErr))
 	return nil
 }
