@@ -60,11 +60,9 @@ func mainHandler(inner http.Handler) http.Handler {
 					ReturnServerError(w, err)
 					return
 				}
-				err = goGet(path, version, suffix, w, r)
-				if err != nil {
-					ReturnServerError(w, err)
-					return
-				}
+				// ignore the error, incorrect tag may be given
+				// forward to inner.ServeHTTP
+				goGet(path, version, suffix, w, r)
 			}
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
 				w.WriteHeader(200)
