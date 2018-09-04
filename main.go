@@ -22,11 +22,12 @@ func init() {
 }
 
 func main() {
-	gp := os.Getenv("GOPATH")
-	if gp == "" {
+	gpEnv := os.Getenv("GOPATH")
+	if gpEnv == "" {
 		panic("can not find $GOPATH")
 	}
-	cacheDir = filepath.Join(gp, "pkg", "mod", "cache", "download")
+	gp := filepath.SplitList(gpEnv)
+	cacheDir = filepath.Join(gp[0], "pkg", "mod", "cache", "download")
 	http.Handle("/", mainHandler(http.FileServer(http.Dir(cacheDir))))
 	err := http.ListenAndServe(listen, nil)
 	if nil != err {
