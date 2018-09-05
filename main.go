@@ -37,10 +37,10 @@ func main() {
 
 func mainHandler(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(os.Stdout, "goproxy: download %s\n", r.URL.Path)
 		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			var suffix string
 			if strings.HasSuffix(r.URL.Path, ".info") || strings.HasSuffix(r.URL.Path, ".mod") {
-				suffix = ".mod"
+				suffix := ".mod"
 				if strings.HasSuffix(r.URL.Path, ".info") {
 					suffix = ".info"
 				}
@@ -66,7 +66,6 @@ func mainHandler(inner http.Handler) http.Handler {
 				goGet(path, version, suffix, w, r)
 			}
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
-				w.WriteHeader(200)
 				w.Write([]byte(""))
 				return
 			}
@@ -96,13 +95,13 @@ func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
-	bytesOut, err := ioutil.ReadAll(stdout)
+	_, err = ioutil.ReadAll(stdout)
 	if err != nil {
 		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		fmt.Fprintf(os.Stdout, "goproxy: download %s stdout: %s stderr: %s\n", path, string(bytesOut), string(bytesErr))
+		fmt.Fprintf(os.Stderr, "goproxy: download %s stderr:\n %s", path, string(bytesErr))
 		return err
 	}
 	out := fmt.Sprintf("%s", bytesErr)
