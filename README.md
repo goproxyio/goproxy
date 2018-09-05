@@ -1,7 +1,7 @@
 
-# GOPROXY
+# GOPROXY [![CircleCI](https://circleci.com/gh/goproxyio/goproxy.svg?style=svg)](https://circleci.com/gh/goproxyio/goproxy)
 
-A global proxy for go modules. see: [goproxy.io](https://goproxy.io)
+A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Build
 
