@@ -39,10 +39,13 @@ func mainHandler(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(os.Stdout, "goproxy: %s download %s\n", r.RemoteAddr, r.URL.Path)
 		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			if strings.HasSuffix(r.URL.Path, ".info") || strings.HasSuffix(r.URL.Path, ".mod") {
+			if strings.HasSuffix(r.URL.Path, ".info") || strings.HasSuffix(r.URL.Path, ".mod") || strings.HasSuffix(r.URL.Path, ".zip") {
 				suffix := ".mod"
 				if strings.HasSuffix(r.URL.Path, ".info") {
 					suffix = ".info"
+				}
+				if strings.HasSuffix(r.URL.Path, ".zip") {
+					suffix = ".zip"
 				}
 				mod := strings.Split(r.URL.Path, "/@v/")
 				if len(mod) != 2 {
