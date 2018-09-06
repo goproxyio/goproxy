@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/goproxyio/goproxy/module"
 )
@@ -37,16 +38,9 @@ func main() {
 
 func mainHandler(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(os.Stdout, "goproxy: %s download %s\n", r.RemoteAddr, r.URL.Path)
+		fmt.Fprintf(os.Stdout, "goproxy: %s %s download %s\n", r.RemoteAddr, time.Now().Format("2006-01-02 15:04:05"), r.URL.Path)
 		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			if strings.HasSuffix(r.URL.Path, ".info") || strings.HasSuffix(r.URL.Path, ".mod") || strings.HasSuffix(r.URL.Path, ".zip") {
-				suffix := ".mod"
-				if strings.HasSuffix(r.URL.Path, ".info") {
-					suffix = ".info"
-				}
-				if strings.HasSuffix(r.URL.Path, ".zip") {
-					suffix = ".zip"
-				}
+			if ok, suffix := allowSuffix(r.URL.Path); ok {
 				mod := strings.Split(r.URL.Path, "/@v/")
 				if len(mod) != 2 {
 					ReturnServerError(w, fmt.Errorf("bad module path:%s", r.URL.Path))
@@ -68,6 +62,7 @@ func mainHandler(inner http.Handler) http.Handler {
 				// forward to inner.ServeHTTP
 				goGet(path, version, suffix, w, r)
 			}
+
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
 				w.Write([]byte(""))
 				return
@@ -75,6 +70,15 @@ func mainHandler(inner http.Handler) http.Handler {
 		}
 		inner.ServeHTTP(w, r)
 	})
+}
+
+func allowSuffix(path string) (bool, string) {
+	for _, suffix := range []string{".mod", ".info", ".zip"} {
+		if strings.HasSuffix(path, suffix) {
+			return true, suffix
+		}
+	}
+	return false, ""
 }
 
 func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request) error {
