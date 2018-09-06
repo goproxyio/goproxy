@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/goproxyio/goproxy/module"
 )
@@ -35,16 +36,11 @@ func main() {
 	}
 }
 
-func getPathSuffix(path string) string {
-	suffixIndex := strings.LastIndex(path, ".")
-	return path[suffixIndex:]
-}
-
 func mainHandler(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(os.Stdout, "goproxy: %s download %s\n", r.RemoteAddr, r.URL.Path)
+		fmt.Fprintf(os.Stdout, "goproxy: %s %s download %s\n", r.RemoteAddr, time.Now().Format("2006-01-02 15:04:05"), r.URL.Path)
 		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			suffix := getPathSuffix(r.URL.Path)
+			suffix := pathSuffix(r.URL.Path)
 			if suffix == ".info" || suffix == ".mod" || suffix == ".zip" {
 				mod := strings.Split(r.URL.Path, "/@v/")
 				if len(mod) != 2 {
@@ -77,6 +73,11 @@ func mainHandler(inner http.Handler) http.Handler {
 		}
 		inner.ServeHTTP(w, r)
 	})
+}
+
+func pathSuffix(path string) string {
+	suffixIndex := strings.LastIndex(path, ".")
+	return path[suffixIndex:]
 }
 
 func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request) error {
