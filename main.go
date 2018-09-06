@@ -64,6 +64,19 @@ func mainHandler(inner http.Handler) http.Handler {
 				// forward to inner.ServeHTTP
 				goGet(path, version, suffix, w, r)
 			}
+
+			// fetch latest version
+			if strings.HasSuffix(r.URL.Path, "/@latest") {
+				path := strings.TrimSuffix(r.URL.Path, "/@latest")
+				path = strings.TrimPrefix(path, "/")
+				path, err := module.DecodePath(path)
+				if err != nil {
+					ReturnServerError(w, err)
+					return
+				}
+				goGet(path, "latest", "", w, r)
+			}
+
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
 				w.Write([]byte(""))
 				return
@@ -110,7 +123,7 @@ func goGet(path, version, suffix string, w http.ResponseWriter, r *http.Request)
 		if len(f) != 4 {
 			continue
 		}
-		if f[1] == "downloading" && f[2] == path && f[3] != version {
+		if f[1] == "downloading" && f[2] == path && f[3] != version && suffix != "" {
 			h := r.Host
 			mod := strings.Split(r.URL.Path, "/@v/")
 			p := fmt.Sprintf("%s/@v/%s%s", mod[0], f[3], suffix)
