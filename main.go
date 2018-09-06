@@ -35,21 +35,20 @@ func main() {
 	}
 }
 
+func getPathSuffix(path string) string {
+	suffixIndex := strings.LastIndex(path, ".")
+	return path[suffixIndex:]
+}
+
 func mainHandler(inner http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(os.Stdout, "goproxy: %s download %s\n", r.RemoteAddr, r.URL.Path)
 		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			if strings.HasSuffix(r.URL.Path, ".info") || strings.HasSuffix(r.URL.Path, ".mod") || strings.HasSuffix(r.URL.Path, ".zip") {
-				suffix := ".mod"
-				if strings.HasSuffix(r.URL.Path, ".info") {
-					suffix = ".info"
-				}
-				if strings.HasSuffix(r.URL.Path, ".zip") {
-					suffix = ".zip"
-				}
+			suffix := getPathSuffix(r.URL.Path)
+			if suffix == ".info" || suffix == ".mod" || suffix == ".zip" {
 				mod := strings.Split(r.URL.Path, "/@v/")
 				if len(mod) != 2 {
-					ReturnServerError(w, fmt.Errorf("bad module path:%s", r.URL.Path))
+					ReturnBadRequest(w, fmt.Errorf("bad module path:%s", r.URL.Path))
 					return
 				}
 				version := strings.TrimSuffix(mod[1], suffix)
@@ -67,6 +66,9 @@ func mainHandler(inner http.Handler) http.Handler {
 				// ignore the error, incorrect tag may be given
 				// forward to inner.ServeHTTP
 				goGet(path, version, suffix, w, r)
+			} else {
+				ReturnBadRequest(w, fmt.Errorf("bad module path:%s", r.URL.Path))
+				return
 			}
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
 				w.Write([]byte(""))

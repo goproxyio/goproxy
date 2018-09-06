@@ -12,3 +12,10 @@ func ReturnServerError(w http.ResponseWriter, err error) {
 	fmt.Fprintf(os.Stderr, "goproxy: %s\n", msg)
 	w.Write([]byte(msg))
 }
+
+func ReturnBadRequest(w http.ResponseWriter, err error) {
+	w.WriteHeader(400)
+	msg := fmt.Sprintf("%v", err)
+	fmt.Fprintf(os.Stderr, "goproxy: %s\n", msg)
+	w.Write([]byte(msg))
+}
