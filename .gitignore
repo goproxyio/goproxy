@@ -1,1 +1,4 @@
 goproxy
+build/*
+go_repos/*
+.idea/*

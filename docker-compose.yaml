@@ -1,0 +1,10 @@
+version: "3"
+services:
+
+  goproxy:
+    image: goproxyio/goproxy:latest
+    ports:
+    - "8080"
+    restart: always
+    volumes:
+      - ./go_repos:/go/pkg/mod/cache/download

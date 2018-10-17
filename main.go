@@ -28,8 +28,13 @@ func main() {
 	if gpEnv == "" {
 		panic("can not find $GOPATH")
 	}
+	fmt.Fprintf(os.Stdout, "goproxy: %s inited.\n", time.Now().Format("2006-01-02 15:04:05"))
 	gp := filepath.SplitList(gpEnv)
 	cacheDir = filepath.Join(gp[0], "pkg", "mod", "cache", "download")
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stdout, "goproxy: %s cache dir is not exist. %s\n", time.Now().Format("2006-01-02 15:04:05"), cacheDir)
+		os.MkdirAll(cacheDir, 0644)
+	}
 	http.Handle("/", mainHandler(http.FileServer(http.Dir(cacheDir))))
 	err := http.ListenAndServe(listen, nil)
 	if nil != err {
