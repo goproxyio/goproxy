@@ -17,23 +17,38 @@ import (
 
 var cacheDir string
 var listen string
+var gopath string
+var gpEnv string
 
 func init() {
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
+	flag.StringVar(&gopath, "gopath", os.Getenv("GOPATH"), "default go path")
 	flag.Parse()
 }
 
 func main() {
-	gpEnv := os.Getenv("GOPATH")
-	if gpEnv == "" {
-		panic("can not find $GOPATH")
+	// setup correct gopath
+	if gopath == "" {
+		gpEnv := os.Getenv("GOPATH")
+		if gpEnv == "" {
+			panic("can not find $GOPATH")
+		}
+	} else {
+		if !filepath.IsAbs(gopath) {
+			gpEnv, _ = filepath.Abs(gopath)
+		} else {
+			gpEnv = gopath
+		}
+		os.Setenv("GOPATH", gpEnv)
 	}
-	fmt.Fprintf(os.Stdout, "goproxy: %s inited.\n", time.Now().Format("2006-01-02 15:04:05"))
+
+	fmt.Fprintf(os.Stdout, "goproxy: serve at %s, GOPATH: %s\n", listen, gpEnv)
+	fmt.Fprintf(os.Stdout, "goproxy: %s inited \n", time.Now().Format("2006-01-02 15:04:05"))
 	gp := filepath.SplitList(gpEnv)
 	cacheDir = filepath.Join(gp[0], "pkg", "mod", "cache", "download")
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		fmt.Fprintf(os.Stdout, "goproxy: %s cache dir is not exist. %s\n", time.Now().Format("2006-01-02 15:04:05"), cacheDir)
-		os.MkdirAll(cacheDir, 0644)
+		os.MkdirAll(cacheDir, 0744)
 	}
 	http.Handle("/", mainHandler(http.FileServer(http.Dir(cacheDir))))
 	err := http.ListenAndServe(listen, nil)
