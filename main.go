@@ -29,7 +29,7 @@ func init() {
 func main() {
 	// setup correct gopath
 	if goPath == "" {
-		gpEnv := os.Getenv("GOPATH")
+		gpEnv = os.Getenv("GOPATH")
 	} else {
 		if !filepath.IsAbs(goPath) {
 			gpEnv, _ = filepath.Abs(goPath)
