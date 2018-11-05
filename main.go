@@ -17,27 +17,24 @@ import (
 
 var cacheDir string
 var listen string
-var gopath string
+var goPath string
 var gpEnv string
 
 func init() {
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
-	flag.StringVar(&gopath, "gopath", os.Getenv("GOPATH"), "default go path")
+	flag.StringVar(&goPath, "gopath", os.Getenv("GOPATH"), "default go path")
 	flag.Parse()
 }
 
 func main() {
 	// setup correct gopath
-	if gopath == "" {
+	if goPath == "" {
 		gpEnv := os.Getenv("GOPATH")
-		if gpEnv == "" {
-			panic("can not find $GOPATH")
-		}
 	} else {
-		if !filepath.IsAbs(gopath) {
-			gpEnv, _ = filepath.Abs(gopath)
+		if !filepath.IsAbs(goPath) {
+			gpEnv, _ = filepath.Abs(goPath)
 		} else {
-			gpEnv = gopath
+			gpEnv = goPath
 		}
 		os.Setenv("GOPATH", gpEnv)
 	}
