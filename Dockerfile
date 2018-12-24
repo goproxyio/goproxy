@@ -1,8 +1,3 @@
-FROM golang:1.11
-
-COPY ./ /goproxy
-WORKDIR /goproxy
-RUN go build
-
-CMD ["/goproxy/goproxy","-listen=0.0.0.0:8080"]
-
+FROM alpine:3.8
+RUN apk add --no-cache git mercurial subversion bzr fossil
+COPY bin/goproxy /usr/bin/goproxy

@@ -10,6 +10,5 @@ jobs:
     working_directory: /go/src/github.com/goproxyio/goproxy/
     steps:
       - checkout
-
       # specify any bash command here prefixed with `run: `
       - run: bash circle-test.sh
