@@ -7,7 +7,6 @@ After=network-online.target
 User=root
 Group=root
 LimitNOFILE=65536
-Environment="GOPATH=/changeme/golang"
 ExecStart=goproxy -listen=0.0.0.0:80
 KillMode=control-group
 SuccessExitStatus=2

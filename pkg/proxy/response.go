@@ -22,3 +22,8 @@ func ReturnBadRequest(w http.ResponseWriter, err error) {
 	errLogger.Printf("goproxy: %s\n", msg)
 	_, _ = w.Write([]byte(msg))
 }
+
+func ReturnSuccess(w http.ResponseWriter, data []byte) {
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(data)
+}
