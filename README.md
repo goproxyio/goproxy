@@ -4,20 +4,21 @@
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Build
-
-    go build
-
+``` sh
+go generate
+go build
+```
 ## Started
     
-    ./goproxy -listen=0.0.0.0:80
+    ./goproxy -listen=0.0.0.0:80 -root=/go
 
 ## Docker
 
-    docker run -it goproxyio/goproxy
+    docker run --name goproxy -d -p80:8081 goproxyio/goproxy 
 
 Use the -v flag to persisting the proxy module data (change ___go_repo___ to your own dir):
 
-    docker run -it -v go_repo:/go/pkg/mod/cache/download goproxyio/goproxy
+    docker run --name goproxy -d -p80:8081 -v go_repo:/go goproxyio/goproxy
 
 ## Docker Compose
 
