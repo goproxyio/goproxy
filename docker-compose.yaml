@@ -1,10 +1,10 @@
-version: "3"
+version: "2"
 services:
-
   goproxy:
-    image: goproxyio/goproxy:latest
+    image: hxzhao527/goproxy:latest
+    command: "goproxy -listen=0.0.0.0:8080"
     ports:
-    - "8080"
+    - "80:8080"
     restart: always
     volumes:
       - ./go_repos:/go/pkg/mod/cache/download

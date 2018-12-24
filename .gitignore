@@ -1,4 +1,6 @@
 goproxy
-build/*
 go_repos/*
 .idea/*
+
+pkg/*
+!pkg/proxy
