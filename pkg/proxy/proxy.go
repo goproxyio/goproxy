@@ -18,10 +18,10 @@ var cacheDir string
 var innerHandle http.Handler
 
 func NewProxy(cache string) http.Handler {
-	modfetch.PkgMod = filepath.Join(cache, "pkg/mod")
-	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache/vcs")
+	modfetch.PkgMod = filepath.Join(cache, "pkg", "mod")
+	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache", "vcs")
 
-	cacheDir = filepath.Join(modfetch.PkgMod, "cache/download")
+	cacheDir = filepath.Join(modfetch.PkgMod, "cache", "download")
 	innerHandle = http.FileServer(http.Dir(cacheDir))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -71,10 +71,12 @@ func NewProxy(cache string) http.Handler {
 				rev, err := repo.Stat("latest")
 				if err != nil {
 					errLogger.Printf("latest failed: %v", err)
+					return
 				}
 				if err := downloadMod(modPath, rev.Version); err != nil {
 					errLogger.Printf("download get err %s", err)
 				}
+
 			}
 
 			if strings.HasSuffix(r.URL.Path, "/@v/list") {
