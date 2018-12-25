@@ -2,15 +2,16 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/goproxyio/goproxy/pkg/modfetch"
-	"github.com/goproxyio/goproxy/pkg/modfetch/codehost"
-	"github.com/goproxyio/goproxy/pkg/module"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/goproxyio/goproxy/pkg/modfetch"
+	"github.com/goproxyio/goproxy/pkg/modfetch/codehost"
+	"github.com/goproxyio/goproxy/pkg/module"
 )
 
 var cacheDir string
@@ -61,7 +62,17 @@ func NewProxy(cache string) http.Handler {
 					ReturnServerError(w, err)
 					return
 				}
-				if err := downloadMod(modPath, "latest"); err != nil {
+				repo, err := modfetch.Lookup(modPath)
+				if err != nil {
+					errLogger.Printf("lookup failed: %v", err)
+					ReturnServerError(w, err)
+					return
+				}
+				rev, err := repo.Stat("latest")
+				if err != nil {
+					errLogger.Printf("latest failed: %v", err)
+				}
+				if err := downloadMod(modPath, rev.Version); err != nil {
 					errLogger.Printf("download get err %s", err)
 				}
 			}
