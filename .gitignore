@@ -1,6 +1,8 @@
 goproxy
 go_repos/*
+cacheDir/*
 .idea/*
+bin/*
 
 pkg/*
 !pkg/proxy

@@ -7,4 +7,4 @@ services:
     - "8081:8081"
     restart: always
     volumes:
-      - ./go_repos:/ext
+      - ./cacheDir:/ext
