@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/goproxyio/goproxy/pkg/proxy"
@@ -24,6 +26,8 @@ func init() {
 }
 
 func main() {
+	errCh := make(chan error)
+
 	log.Printf("goproxy: %s inited. listen on %s\n", time.Now().Format("2006-01-02 15:04:05"), listen)
 
 	if cacheDir == "" {
@@ -43,9 +47,22 @@ func main() {
 	}
 
 	http.Handle("/", proxy.NewProxy(cacheDir))
-	// TODO: TLS, graceful shutdown
-	err := http.ListenAndServe(listen, nil)
-	if nil != err {
-		panic(err)
+
+	go func() {
+		err := http.ListenAndServe(listen, nil)
+		if err != nil {
+			errCh <- err
+		}
+	}()
+
+	signCh := make(chan os.Signal)
+	signal.Notify(signCh, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case err := <-errCh:
+		log.Fatal(err)
+
+	case sign := <-signCh:
+		log.Printf("Server gracefully %s", sign)
 	}
 }
