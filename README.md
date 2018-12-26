@@ -9,15 +9,19 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Started
     
-    ./goproxy -listen=0.0.0.0:80 -cacheDir=/cache
+    ./goproxy -listen=0.0.0.0:80 -cacheDir=/data
 
-## Docker
+## Docker build
 
-    docker run --name goproxy -d -p80:8081 goproxyio/goproxy
+    docker build . --no-cache -t goproxy/goproxy:latest
 
-Use the -v flag to persisting the proxy module data (change ___go_repo___ to your own dir):
+## Docker run
 
-    docker run --name goproxy -d -p80:8081 -v go_repo:/cache goproxyio/goproxy
+    docker run --name goproxy -d -p80:8081 goproxy/goproxy
+
+Use the -v flag to persisting the proxy module data (change ___cacheDir___ to your own dir):
+
+    docker run --name goproxy -d -p80:8081 -v cacheDir:/go goproxy/goproxy
 
 ## Docker Compose
 

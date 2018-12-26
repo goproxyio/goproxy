@@ -33,9 +33,11 @@ func main() {
 	if cacheDir == "" {
 		cacheDir = "/go"
 		gpEnv := os.Getenv("GOPATH")
-		gp := filepath.SplitList(gpEnv)
-		if gp[0] != "" {
-			cacheDir = gp[0]
+		if gpEnv != "" {
+			gp := filepath.SplitList(gpEnv)
+			if gp[0] != "" {
+				cacheDir = gp[0]
+			}
 		}
 	}
 	fullCacheDir := filepath.Join(cacheDir, "pkg", "mod", "cache", "download")
