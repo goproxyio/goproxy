@@ -37,13 +37,13 @@ func NewProxy(cache string) http.Handler {
 				version := strings.TrimSuffix(mod[1], suffix)
 				version, err = module.DecodeVersion(version)
 				if err != nil {
-					ReturnServerError(w, err)
+					ReturnInternalServerError(w, err)
 					return
 				}
 				modPath := strings.TrimPrefix(mod[0], "/")
 				modPath, err := module.DecodePath(modPath)
 				if err != nil {
-					ReturnServerError(w, err)
+					ReturnInternalServerError(w, err)
 					return
 				}
 				// ignore the error, incorrect tag may be given
@@ -59,13 +59,13 @@ func NewProxy(cache string) http.Handler {
 				modPath = strings.TrimPrefix(modPath, "/")
 				modPath, err := module.DecodePath(modPath)
 				if err != nil {
-					ReturnServerError(w, err)
+					ReturnInternalServerError(w, err)
 					return
 				}
 				repo, err := modfetch.Lookup(modPath)
 				if err != nil {
 					errLogger.Printf("lookup failed: %v", err)
-					ReturnServerError(w, err)
+					ReturnInternalServerError(w, err)
 					return
 				}
 				rev, err := repo.Stat("latest")
