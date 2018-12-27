@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 PKG=${PWD}/pkg/
+GOROOT=`go env GOROOT`
 cp -r ${GOROOT}/src/cmd/go/internal/base ${PKG}
 cp -r ${GOROOT}/src/cmd/go/internal/cache ${PKG}
 cp -r ${GOROOT}/src/cmd/go/internal/cfg ${PKG}
