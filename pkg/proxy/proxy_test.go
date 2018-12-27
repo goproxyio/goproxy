@@ -97,3 +97,15 @@ func TestList(t *testing.T) {
 	}
 	t.Logf("%s@%s versions are %s", packagePath, version, info)
 }
+
+func TestEncode(t *testing.T) {
+	fullPath := "github.com/PuerkitoBio/goquery/@v/v0.0.0-20181014175806-2af3d16e2bb8.info"
+	expect := "github.com/!puerkito!bio/goquery/@v/v0.0.0-20181014175806-2af3d16e2bb8.info"
+	realRet, err := encodeString(fullPath)
+	if err != nil {
+		t.Error(err)
+	}
+	if realRet != expect {
+		t.Errorf("encodeString failed. expect: %s, got: %s", expect, realRet)
+	}
+}
