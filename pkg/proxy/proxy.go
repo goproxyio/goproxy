@@ -85,6 +85,7 @@ func NewProxy(cache string) http.Handler {
 func parseModInfoFromUrl(url string) (*modInfo, error) {
 
 	var modPath, modVersion, suf string
+	var err error
 	switch {
 	case strings.HasSuffix(url, "/@v/list"):
 		// /golang.org/x/net/@v/list
@@ -105,11 +106,22 @@ func parseModInfoFromUrl(url string) (*modInfo, error) {
 		if len(tmp) != 2 {
 			return nil, fmt.Errorf("bad module path:%s", url)
 		}
-		modVersion = strings.TrimSuffix(tmp[1], ext)
 		modPath = strings.Trim(tmp[0], "/")
+		modVersion = strings.TrimSuffix(tmp[1], ext)
+
+		modVersion, err = module.DecodeVersion(modVersion)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("bad module path:%s", url)
 	}
+	// decode path & version, next proxy and source need
+	modPath, err = module.DecodePath(modPath)
+	if err != nil {
+		return nil, err
+	}
+
 	return &modInfo{module.Version{Path: modPath, Version: modVersion}, suf}, nil
 }
 
