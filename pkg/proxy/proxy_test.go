@@ -145,6 +145,16 @@ var _modInfoTests = []struct {
 	},
 }
 
+var _modListTests = []struct {
+	path     string
+	versions []string
+}{
+	{
+		path:     "github.com/rsc/vgotest1",
+		versions: []string{"v0.0.0", "v0.0.1", "v1.0.0", "v1.0.1", "v1.0.2", "v1.0.3", "v1.1.0", "v2.0.0+incompatible"},
+	},
+}
+
 func TestFetchInfo(t *testing.T) {
 	testenv.MustHaveExternalNetwork(t)
 
@@ -260,8 +270,24 @@ func TestLatest(t *testing.T) {
 	}
 }
 
-// TODO
 func TestList(t *testing.T) {
+
+	for _, mod := range _modListTests {
+		req := buildRequest(mod.path, "", "")
+
+		rr, err := basicCheck(req)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		modfetch.SortVersions(mod.versions)
+
+		if data := rr.Body.String(); strings.Join(mod.versions, "\n") != data {
+			t.Errorf("list not well,\n expected: %v\n, got: %v", mod.versions, strings.Split(data, "\n"))
+		}
+	}
+
 }
 
 func buildRequest(modPath, modVersion string, ext string) *http.Request {
