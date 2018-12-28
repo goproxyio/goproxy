@@ -26,6 +26,7 @@ cp -r ${GOROOT}/src/cmd/internal/buildid ${PKG}
 cp -r ${GOROOT}/src/cmd/internal/objabi ${PKG}
 
 cp -r ${GOROOT}/src/internal/singleflight ${PKG}
+cp -r ${GOROOT}/src/internal/testenv ${PKG}
 
 
 find ${PWD}/pkg -type f -name '*.go' -exec sed -i 's/cmd\/go\/internal/github.com\/goproxyio\/goproxy\/pkg/g' {} +
