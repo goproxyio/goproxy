@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
@@ -44,14 +45,16 @@ func main() {
 	if _, err := os.Stat(fullCacheDir); os.IsNotExist(err) {
 		log.Printf("goproxy: cache dir %s is not exist. To create it.\n", fullCacheDir)
 		if err := os.MkdirAll(fullCacheDir, 0755); err != nil {
-			log.Fatalf("make cache dir failed: %s", err)
+			log.Fatalf("goproxy: make cache dir failed: %s", err)
 		}
 	}
-
-	http.Handle("/", proxy.NewProxy(cacheDir))
+	server := http.Server{
+		Addr:    listen,
+		Handler: proxy.NewProxy(cacheDir),
+	}
 
 	go func() {
-		err := http.ListenAndServe(listen, nil)
+		err := server.ListenAndServe()
 		if err != nil {
 			errCh <- err
 		}
@@ -63,8 +66,10 @@ func main() {
 	select {
 	case err := <-errCh:
 		log.Fatal(err)
-
 	case sign := <-signCh:
-		log.Printf("Server gracefully %s", sign)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = server.Shutdown(ctx)
+		log.Printf("goproxy: Server gracefully %s", sign)
 	}
 }
