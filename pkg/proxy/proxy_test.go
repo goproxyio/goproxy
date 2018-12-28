@@ -1,15 +1,26 @@
 package proxy
 
 import (
-	"github.com/goproxyio/goproxy/pkg/modfetch"
-	"github.com/goproxyio/goproxy/pkg/modfetch/codehost"
-	"github.com/goproxyio/goproxy/pkg/module"
+	"archive/zip"
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
-	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/goproxyio/goproxy/pkg/modfetch"
+	"github.com/goproxyio/goproxy/pkg/module"
+	"github.com/goproxyio/goproxy/pkg/testenv"
 )
+
+var _handle http.Handler
 
 func TestMain(m *testing.M) {
 	tmpdir, err := ioutil.TempDir("", "goproxy-test-")
@@ -17,83 +28,266 @@ func TestMain(m *testing.M) {
 		log.Fatalf("init tmpdir failed: %s", err)
 	}
 	defer os.RemoveAll(tmpdir)
-	modfetch.PkgMod = filepath.Join(tmpdir, "pkg/mod")
-	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache/vcs")
+	_handle = NewProxy(tmpdir)
 	os.Exit(m.Run())
 }
 
+var _modInfoTests = []struct {
+	path     string
+	version  string
+	latest   bool
+	time     time.Time
+	gomod    string
+	zip      []string
+	versions []string
+}{
+	{
+		path:    "gopkg.in/check.v1",
+		version: "v0.0.0-20161208181325-20d25e280405",
+		time:    time.Date(2016, 12, 8, 18, 13, 25, 0, time.UTC),
+		gomod:   "module gopkg.in/check.v1\n",
+		zip: []string{
+			".gitignore",
+			".travis.yml",
+			"LICENSE",
+			"README.md",
+			"TODO",
+			"benchmark.go",
+			"benchmark_test.go",
+			"bootstrap_test.go",
+			"check.go",
+			"check_test.go",
+			"checkers.go",
+			"checkers_test.go",
+			"export_test.go",
+			"fixture_test.go",
+			"foundation_test.go",
+			"helpers.go",
+			"helpers_test.go",
+			"printer.go",
+			"printer_test.go",
+			"reporter.go",
+			"reporter_test.go",
+			"run.go",
+			"run_test.go",
+		},
+	},
+	{
+		path:    "github.com/PuerkitoBio/goquery",
+		version: "v0.0.0-20181014175806-2af3d16e2bb8",
+		time:    time.Date(2018, 10, 14, 17, 58, 6, 0, time.UTC),
+		gomod:   `module github.com/PuerkitoBio/goquery\n`,
+		zip: []string{
+			".gitattributes",
+			".gitignore",
+			".travis.yml",
+			"LICENSE",
+			"README.md",
+			"array.go",
+			"array_test.go",
+			"bench/v0.1.0",
+			"bench/v0.1.1",
+			"bench/v0.1.1-v0.2.1-go1.1rc1.svg",
+			"bench/v0.2.0",
+			"bench/v0.2.0-v0.2.1-go1.1rc1.svg",
+			"bench/v0.2.1-go1.1rc1",
+			"bench/v0.3.0",
+			"bench/v0.3.2-go1.2",
+			"bench/v0.3.2-go1.2-take2",
+			"bench/v0.3.2-go1.2rc1",
+			"bench/v1.0.0-go1.7",
+			"bench/v1.0.1a-go1.7",
+			"bench/v1.0.1b-go1.7",
+			"bench/v1.0.1c-go1.7",
+			"bench_array_test.go",
+			"bench_example_test.go",
+			"bench_expand_test.go",
+			"bench_filter_test.go",
+			"bench_iteration_test.go",
+			"bench_property_test.go",
+			"bench_query_test.go",
+			"bench_traversal_test.go",
+			"doc.go",
+			"doc/tips.md",
+			"example_test.go",
+			"expand.go",
+			"expand_test.go",
+			"filter.go",
+			"filter_test.go",
+			"iteration.go",
+			"iteration_test.go",
+			"manipulation.go",
+			"manipulation_test.go",
+			"misc/git/pre-commit",
+			"property.go",
+			"property_test.go",
+			"query.go",
+			"query_test.go",
+			"testdata/gotesting.html",
+			"testdata/gowiki.html",
+			"testdata/metalreview.html",
+			"testdata/page.html",
+			"testdata/page2.html",
+			"testdata/page3.html",
+			"traversal.go",
+			"traversal_test.go",
+			"type.go",
+			"type_test.go",
+			"utilities.go",
+			"utilities_test.go",
+		},
+	},
+	{
+		path:    "github.com/rsc/vgotest1",
+		version: "v0.0.0-20180219223237-a08abb797a67",
+		latest:  true,
+		time:    time.Date(2018, 02, 19, 22, 32, 37, 0, time.UTC),
+	},
+}
+
 func TestFetchInfo(t *testing.T) {
-	packagePath := "gopkg.in/check.v1"
-	version := "v0.0.0-20161208181325-20d25e280405"
-	info, err := modfetch.InfoFile(packagePath, version)
-	if err != nil {
-		t.Errorf("fetch %s@%s info get error: %s", packagePath, version, err)
+	testenv.MustHaveExternalNetwork(t)
+
+	for _, mod := range _modInfoTests {
+		req := buildRequest(mod.path, mod.version, ".info")
+
+		rr, err := basicCheck(req)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		// check return data
+		info := new(modfetch.RevInfo)
+		if err := json.Unmarshal(rr.Body.Bytes(), info); err != nil {
+			t.Errorf("package info is not recognized")
+			continue
+		}
+		if mod.version != info.Version {
+			t.Errorf("info.Version = %s, want %s", info.Version, mod.version)
+		}
+		if !mod.time.Equal(info.Time) {
+			t.Errorf("info.Time = %v, want %v", info.Time, mod.time)
+		}
 	}
-	t.Logf("%s@%s info on %s", packagePath, version, info)
+
 }
 func TestFetchModFile(t *testing.T) {
-	packagePath := "gopkg.in/check.v1"
-	version := "v0.0.0-20161208181325-20d25e280405"
-	info, err := modfetch.GoModFile(packagePath, version)
-	if err != nil {
-		t.Errorf("fetch %s@%s modfile get error: %s", packagePath, version, err)
+	testenv.MustHaveExternalNetwork(t)
+
+	for _, mod := range _modInfoTests {
+		if len(mod.gomod) == 0 {
+			continue
+		}
+		req := buildRequest(mod.path, mod.version, ".mod")
+
+		rr, err := basicCheck(req)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		if data := rr.Body.String(); data != mod.gomod {
+			t.Errorf("repo.GoMod(%q) = %q, want %q", mod.version, data, mod.gomod)
+		}
 	}
-	t.Logf("%s@%s modfile on %s", packagePath, version, info)
-}
-func TestFetchModSum(t *testing.T) {
-	packagePath := "gopkg.in/check.v1"
-	version := "v0.0.0-20161208181325-20d25e280405"
-	info, err := modfetch.GoModSum(packagePath, version)
-	if err != nil {
-		t.Errorf("fetch %s@%s modsum get error: %s", packagePath, version, err)
-	}
-	t.Logf("%s@%s modsum is %s", packagePath, version, info)
 }
 func TestFetchZip(t *testing.T) {
-	packagePath := "gopkg.in/check.v1"
-	version := "v0.0.0-20161208181325-20d25e280405"
-	mod := module.Version{Path: packagePath, Version: version}
-	info, err := modfetch.DownloadZip(mod)
-	if err != nil {
-		t.Errorf("fetch %s@%s modsum get error: %s", packagePath, version, err)
+	testenv.MustHaveExternalNetwork(t)
+
+	for _, mod := range _modInfoTests {
+		if len(mod.zip) == 0 {
+			continue
+		}
+		req := buildRequest(mod.path, mod.version, ".zip")
+
+		rr, err := basicCheck(req)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		prefix := mod.path + "@" + mod.version + "/"
+		var names []string
+
+		data := rr.Body.Bytes() // ??
+		z, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+		if err != nil {
+			t.Errorf("open %s's zip failed: %v", mod.path, err)
+			continue
+		}
+
+		for _, file := range z.File {
+			if !strings.HasPrefix(file.Name, prefix) {
+				t.Errorf("zip entry %v does not start with prefix %v", file.Name, prefix)
+				continue
+			}
+			names = append(names, file.Name[len(prefix):])
+		}
+		if !reflect.DeepEqual(names, mod.zip) {
+			t.Errorf("zip = %v\nwant %v\n", names, mod.zip)
+		}
 	}
-	t.Logf("%s@%s modsum on %s", packagePath, version, info)
-}
-func TestDownload(t *testing.T) {
-	packagePath := "gopkg.in/check.v1"
-	version := "v0.0.0-20161208181325-20d25e280405"
-	mod := module.Version{Path: packagePath, Version: version}
-	info, err := modfetch.Download(mod)
-	if err != nil {
-		t.Errorf("fetch %s@%s modsum get error: %s", packagePath, version, err)
-	}
-	t.Logf("%s@%s modsum on %s", packagePath, version, info)
+
 }
 
 func TestLatest(t *testing.T) {
-	packagePath := "golang.org/x/net"
-	version := "latest"
-	repo, err := modfetch.Lookup(packagePath)
-	if err != nil {
-		t.Errorf("lookup %s get error %s", packagePath, err)
+	testenv.MustHaveExternalNetwork(t)
+
+	for _, mod := range _modInfoTests {
+		if !mod.latest {
+			continue
+		}
+		req := buildRequest(mod.path, "latest", "")
+
+		rr, err := basicCheck(req)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		info := new(modfetch.RevInfo)
+		if err := json.Unmarshal(rr.Body.Bytes(), info); err != nil {
+			t.Errorf("package info is not recognized")
+			continue
+		}
+		if mod.version != info.Version {
+			t.Errorf("info.Version = %s, want %s", info.Version, mod.version)
+		}
+		if !mod.time.Equal(info.Time) {
+			t.Errorf("info.Time = %v, want %v", info.Time, mod.time)
+		}
 	}
-	info, err := repo.Latest()
-	if err != nil {
-		t.Errorf("fetch %s@%s info get error %s", packagePath, version, err)
-	}
-	t.Logf("%s@%s info is %s", packagePath, version, info)
 }
 
+// TODO
 func TestList(t *testing.T) {
-	packagePath := "golang.org/x/net"
-	version := "latest"
-	repo, err := modfetch.Lookup(packagePath)
-	if err != nil {
-		t.Errorf("lookup %s get error %s", packagePath, err)
+}
+
+func buildRequest(modPath, modVersion string, ext string) *http.Request {
+	modPath, _ = module.EncodePath(modPath)
+	modVersion, _ = module.EncodeVersion(modVersion)
+	url := "/" + modPath
+	switch modVersion {
+	case "":
+		url += "/@v/list"
+	case "latest":
+		url += "/@latest"
+	default:
+		url = url + "/@v/" + modVersion + ext
 	}
-	info, err := repo.Versions("")
-	if err != nil {
-		t.Errorf("fetch %s@%s versions get error %s", packagePath, version, err)
+	req, _ := http.NewRequest("GET", url, nil)
+	return req
+}
+
+func basicCheck(req *http.Request) (*httptest.ResponseRecorder, error) {
+	rr := httptest.NewRecorder()
+	_handle.ServeHTTP(rr, req)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		return nil, fmt.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
 	}
-	t.Logf("%s@%s versions are %s", packagePath, version, info)
+	return rr, nil
 }
