@@ -76,7 +76,7 @@ var _modInfoTests = []struct {
 		path:    "github.com/PuerkitoBio/goquery",
 		version: "v0.0.0-20181014175806-2af3d16e2bb8",
 		time:    time.Date(2018, 10, 14, 17, 58, 6, 0, time.UTC),
-		gomod:   `module github.com/PuerkitoBio/goquery\n`,
+		gomod:   "module github.com/PuerkitoBio/goquery\n",
 		zip: []string{
 			".gitattributes",
 			".gitignore",
