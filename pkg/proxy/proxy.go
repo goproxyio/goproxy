@@ -10,10 +10,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/goproxyio/goproxy/pkg/cfg"
-	"github.com/goproxyio/goproxy/pkg/modfetch"
-	"github.com/goproxyio/goproxy/pkg/modfetch/codehost"
-	"github.com/goproxyio/goproxy/pkg/module"
+	"github.com/goproxyio/goproxy/internal/cfg"
+	"github.com/goproxyio/goproxy/internal/modfetch"
+	"github.com/goproxyio/goproxy/internal/modfetch/codehost"
+	"github.com/goproxyio/goproxy/internal/module"
 )
 
 var cacheDir string
