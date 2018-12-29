@@ -11,17 +11,13 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
     
     ./goproxy -listen=0.0.0.0:80 -cacheDir=/data
 
-## Docker build
+## Use docker image
 
-    docker build . --no-cache -t goproxy/goproxy:latest
-
-## Docker run
-
-    docker run --name goproxy -d -p80:8081 goproxy/goproxy
+    docker run -d -p80:8081 goproxy/goproxy
 
 Use the -v flag to persisting the proxy module data (change ___cacheDir___ to your own dir):
 
-    docker run --name goproxy -d -p80:8081 -v cacheDir:/go goproxy/goproxy
+    docker run -d -p80:8081 -v cacheDir:/go goproxy/goproxy
 
 ## Docker Compose
 
@@ -29,4 +25,5 @@ Use the -v flag to persisting the proxy module data (change ___cacheDir___ to yo
 
 ## Appendix
 
-1. set `$GOPROXY` to change your proxy or disable the proxy
+1. set `export GOPROXY=http://localhost` to enable your goproxy.
+2. set `export GOPROXY=` to disable it.
