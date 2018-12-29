@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/goproxyio/goproxy/pkg/cfg"
 	"github.com/goproxyio/goproxy/pkg/modfetch"
 	"github.com/goproxyio/goproxy/pkg/modfetch/codehost"
 	"github.com/goproxyio/goproxy/pkg/module"
@@ -23,9 +24,15 @@ type modInfo struct {
 	suf string
 }
 
-func NewProxy(cache string) http.Handler {
-	modfetch.PkgMod = filepath.Join(cache, "pkg", "mod")
+func setupEnv(basedir string) {
+	modfetch.QuietLookup = true // just to hide modfetch/cache.go#127
+	modfetch.PkgMod = filepath.Join(basedir, "pkg", "mod")
 	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache", "vcs")
+	cfg.CmdName = "mod download" // just to hide modfetch/fetch.go#L87
+}
+
+func NewProxy(cache string) http.Handler {
+	setupEnv(cache)
 
 	cacheDir = filepath.Join(modfetch.PkgMod, "cache", "download")
 	innerHandle = http.FileServer(http.Dir(cacheDir))
