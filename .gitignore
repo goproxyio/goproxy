@@ -4,5 +4,4 @@ cacheDir/*
 .idea/*
 bin/*
 
-pkg/*
-!pkg/proxy
+internal/

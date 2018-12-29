@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goproxyio/goproxy/pkg/modfetch"
-	"github.com/goproxyio/goproxy/pkg/module"
-	"github.com/goproxyio/goproxy/pkg/testenv"
+	"github.com/goproxyio/goproxy/internal/modfetch"
+	"github.com/goproxyio/goproxy/internal/module"
+	"github.com/goproxyio/goproxy/internal/testenv"
 )
 
 var _handle http.Handler
