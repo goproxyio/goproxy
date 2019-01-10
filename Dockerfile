@@ -1,17 +1,23 @@
-FROM golang:1.11 AS build
+FROM golang:alpine AS build
 
-COPY ./ /goproxy
+RUN apk add --no-cache -U make
 
-RUN cd /goproxy &&\
-    export GO111MODULE=on &&\
-    go generate &&\
-    go mod tidy &&\
-    go build
+COPY . /src/goproxy
+WORKDIR /src/goproxy
 
-FROM alpine:3.8
-RUN apk add --no-cache git mercurial subversion bzr fossil
-COPY --from=build /goproxy/goproxy /bin/goproxy
+ENV CGO_ENABLED=0
+
+RUN make
+
+FROM alpine:latest
+
+RUN apk add --no-cache -U git mercurial subversion bzr fossil
+
+COPY --from=build /src/goproxy/goproxy /goproxy
+
+VOLUME /go
 
 EXPOSE 8081
 
-CMD ["goproxy"]
+ENTRYPOINT ["/goproxy"]
+CMD []
