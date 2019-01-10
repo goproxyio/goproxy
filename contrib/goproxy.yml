@@ -1,0 +1,31 @@
+version: "3.4"
+
+services:
+  goproxy:
+    image: goproxy/goproxy
+    volumes:
+      - goproxy:/go
+    networks:
+      - bridge
+      - traefik
+    deploy:
+      placement:
+        constraints:
+          - "node.hostname == dm1.mydomain.com"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.port=8081"
+        - "traefik.backend=goproxy"
+        - "traefik.docker.network=traefik"
+        - "traefik.frontend.rule=Host:goproxy.mydomain.com"
+      replicas: 1
+
+networks:
+  bridge:
+    external: true
+  traefik:
+    external: true
+
+volumes:
+  goproxy:
+    driver: local
