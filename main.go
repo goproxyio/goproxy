@@ -1,4 +1,4 @@
-//go:generate bash build/generate.sh
+//go:generate ./build/generate.sh
 
 package main
 
