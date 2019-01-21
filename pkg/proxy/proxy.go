@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"github.com/goproxyio/goproxy/internal/cfg"
 	"github.com/goproxyio/goproxy/internal/modfetch"
 	"github.com/goproxyio/goproxy/internal/modfetch/codehost"
+	"github.com/goproxyio/goproxy/internal/modload"
 	"github.com/goproxyio/goproxy/internal/module"
 )
 
@@ -39,20 +39,61 @@ func NewProxy(cache string) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("goproxy: %s request %s\n", r.RemoteAddr, r.URL.Path)
-		if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err != nil {
-			info, err := parseModInfoFromUrl(r.URL.Path)
-			if err != nil {
-				ReturnBadRequest(w, err)
+		info, err := parseModInfoFromUrl(r.URL.Path)
+		if err != nil {
+			ReturnBadRequest(w, err)
+			return
+		}
+		switch suf := info.suf; suf {
+		case ".info", ".mod", ".zip":
+			{
+				if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err == nil {
+					// cache files exist on disk
+					innerHandle.ServeHTTP(w, r)
+					return
+				}
+				realMod, err := getQuery(info.Version.Path, info.Version.Version)
+				if err != nil {
+					errLogger.Printf("goproxy: lookup %s@%s get err %s", info.Path, info.Version.Version, err)
+					ReturnBadRequest(w, err)
+					return
+				}
+				switch suf {
+				case ".info":
+					{
+						if revInfo, err := modfetch.Stat(realMod.Path, realMod.Version); err != nil {
+							// use Stat instead of InfoFile, because when query-version is master, no infoFile here, maybe bug of go
+							// TODO(hxzhao527): check whether InfoFile have a bug?
+							errLogger.Printf("goproxy: fetch info %s@%s get err %s", info.Path, info.Version.Version, err)
+							ReturnBadRequest(w, err)
+						} else {
+							ReturnJsonData(w, revInfo)
+						}
+					}
+				case ".mod":
+					{
+						if modFile, err := modfetch.GoModFile(realMod.Path, realMod.Version); err != nil {
+							errLogger.Printf("goproxy: fetch modfile %s@%s get err %s", info.Path, info.Version.Version, err)
+							ReturnBadRequest(w, err)
+						} else {
+							http.ServeFile(w, r, modFile)
+						}
+					}
+				case ".zip":
+					{
+						mod := module.Version{Path: realMod.Path, Version: realMod.Version}
+						if zipFile, err := modfetch.DownloadZip(mod); err != nil {
+							errLogger.Printf("goproxy: download zip %s@%s get err %s", info.Path, info.Version.Version, err)
+							ReturnBadRequest(w, err)
+						} else {
+							http.ServeFile(w, r, zipFile)
+						}
+					}
+				}
 				return
 			}
-			switch suf := info.suf; suf {
-			case "":
-				// ignore the error, incorrect tag may be given
-				// forward to inner.ServeHTTP
-				if err := downloadMod(info.Path, info.Version.Version); err != nil {
-					errLogger.Printf("goproxy: download %s@%s get err %s", info.Path, info.Version.Version, err)
-				}
-			case "/@v/list", "/@latest":
+		case "/@v/list", "/@latest":
+			{
 				repo, err := modfetch.Lookup(info.Path)
 				if err != nil {
 					errLogger.Printf("goproxy: lookup failed: %v", err)
@@ -61,31 +102,23 @@ func NewProxy(cache string) http.Handler {
 				}
 				switch suf {
 				case "/@v/list":
-					info, err := repo.Versions("")
-					if err != nil {
+					if info, err := repo.Versions(""); err != nil {
 						ReturnInternalServerError(w, err)
-						return
+					} else {
+						data := strings.Join(info, "\n")
+						ReturnSuccess(w, []byte(data))
 					}
-					data := strings.Join(info, "\n")
-					ReturnSuccess(w, []byte(data))
-					return
 				case "/@latest":
-					info, err := repo.Latest()
+					modLatestInfo, err := repo.Latest()
 					if err != nil {
 						ReturnInternalServerError(w, err)
 						return
 					}
-					data, err := json.Marshal(info)
-					if err != nil {
-						// ignore
-						errLogger.Printf("goproxy:  marshal mod version info get error: %s", err)
-					}
-					ReturnSuccess(w, data)
-					return
+					ReturnJsonData(w, modLatestInfo)
 				}
+				return
 			}
 		}
-		innerHandle.ServeHTTP(w, r)
 	})
 }
 
@@ -108,13 +141,13 @@ func parseModInfoFromUrl(url string) (*modInfo, error) {
 		// /golang.org/x/net/@v/v0.0.0-20181220203305-927f97764cc3.info
 		// /golang.org/x/net/@v/v0.0.0-20181220203305-927f97764cc3.mod
 		// /golang.org/x/net/@v/v0.0.0-20181220203305-927f97764cc3.zip
-		ext := path.Ext(url)
+		suf = path.Ext(url)
 		tmp := strings.Split(url, "/@v/")
 		if len(tmp) != 2 {
 			return nil, fmt.Errorf("bad module path:%s", url)
 		}
 		modPath = strings.Trim(tmp[0], "/")
-		modVersion = strings.TrimSuffix(tmp[1], ext)
+		modVersion = strings.TrimSuffix(tmp[1], suf)
 
 		modVersion, err = module.DecodeVersion(modVersion)
 		if err != nil {
@@ -132,24 +165,20 @@ func parseModInfoFromUrl(url string) (*modInfo, error) {
 	return &modInfo{module.Version{Path: modPath, Version: modVersion}, suf}, nil
 }
 
-func downloadMod(modPath, version string) error {
-	if _, err := modfetch.InfoFile(modPath, version); err != nil {
-		return err
+// getQuery evaluates the given package path, version pair
+// to determine the underlying module version being requested.
+// If forceModulePath is set, getQuery must interpret path
+// as a module path.
+func getQuery(path, vers string) (module.Version, error) {
+
+	// First choice is always to assume path is a module path.
+	// If that works out, we're done.
+	info, err := modload.Query(path, vers, modload.Allowed)
+	if err == nil {
+		return module.Version{Path: path, Version: info.Version}, nil
 	}
-	if _, err := modfetch.GoModFile(modPath, version); err != nil {
-		return err
-	}
-	if _, err := modfetch.GoModSum(modPath, version); err != nil {
-		return err
-	}
-	mod := module.Version{Path: modPath, Version: version}
-	if _, err := modfetch.DownloadZip(mod); err != nil {
-		return err
-	}
-	if a, err := modfetch.Download(mod); err != nil {
-		return err
-	} else {
-		log.Printf("goproxy: download %s@%s to dir %s\n", modPath, version, a)
-	}
-	return nil
+
+	// Otherwise, try a package path.
+	m, _, err := modload.QueryPackage(path, vers, modload.Allowed)
+	return m, err
 }
