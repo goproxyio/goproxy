@@ -58,6 +58,11 @@ func NewProxy(cache string) http.Handler {
 					ReturnBadRequest(w, err)
 					return
 				}
+				if realMod.Path != info.Version.Path {
+					log.Printf("goproxy: mod %s@%s may have subpath, just return to make client recurse", info.Path, info.Version.Version)
+					ReturnSuccess(w, nil)
+					return
+				}
 				switch suf {
 				case ".info":
 					{
