@@ -3,17 +3,15 @@ FROM golang:alpine AS build
 RUN apk add --no-cache -U make
 
 COPY . /src/goproxy
-WORKDIR /src/goproxy
-
-ENV CGO_ENABLED=0
-
-RUN make
+RUN cd /src/goproxy &&\
+    export CGO_ENABLED=0 &&\
+    make
 
 FROM alpine:latest
 
 RUN apk add --no-cache -U git mercurial subversion bzr fossil
 
-COPY --from=build /src/goproxy/goproxy /goproxy
+COPY --from=build /src/goproxy/bin/goproxy /goproxy
 
 VOLUME /go
 

@@ -1,0 +1,4 @@
+golang.org/x/net@latest
+github.com/oiooj/agent@v0.2.2
+github.com/micro/go-api/resolver@v0.5.0
+cloud.google.com/go

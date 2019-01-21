@@ -156,6 +156,12 @@ var _modInfoTests = []struct {
 			"x.go",
 		},
 	},
+	{
+		path:    "github.com/micro/go-api/resolver",
+		query:   "v0.5.0",
+		version: "v0.5.0",
+		gomod:   "module github.com/micro/go-api\n",
+	},
 }
 
 var _modListTests = []struct {

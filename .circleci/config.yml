@@ -5,10 +5,23 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version
       - image: circleci/golang:1.11
     working_directory: /go/src/github.com/goproxyio/goproxy/
     steps:
       - checkout
-      # specify any bash command here prefixed with `run: `
-      - run: bash circle-test.sh
+      - run:
+          name: install deps
+          command: make generate
+      - run:
+          name: test self
+          command: make test
+      - run:
+          name: build bin
+          command: make build
+      - run:
+          name: run proxy backgroud to test real
+          command: bin/goproxy
+          background: true
+      - run:
+          name: run real test
+          command: bash test/get_test.sh
