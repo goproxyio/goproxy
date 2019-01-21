@@ -29,20 +29,21 @@ func TestMain(m *testing.M) {
 	}
 	defer os.RemoveAll(tmpdir)
 	_handle = NewProxy(tmpdir)
-	os.Exit(m.Run())
+	m.Run()
 }
 
 var _modInfoTests = []struct {
-	path     string
-	version  string
-	latest   bool
-	time     time.Time
-	gomod    string
-	zip      []string
-	versions []string
+	path    string
+	query   string // query
+	version string // want
+	latest  bool
+	time    time.Time
+	gomod   string
+	zip     []string
 }{
 	{
 		path:    "gopkg.in/check.v1",
+		query:   "v0.0.0-20161208181325-20d25e280405",
 		version: "v0.0.0-20161208181325-20d25e280405",
 		time:    time.Date(2016, 12, 8, 18, 13, 25, 0, time.UTC),
 		gomod:   "module gopkg.in/check.v1\n",
@@ -74,6 +75,7 @@ var _modInfoTests = []struct {
 	},
 	{
 		path:    "github.com/PuerkitoBio/goquery",
+		query:   "v0.0.0-20181014175806-2af3d16e2bb8",
 		version: "v0.0.0-20181014175806-2af3d16e2bb8",
 		time:    time.Date(2018, 10, 14, 17, 58, 6, 0, time.UTC),
 		gomod:   "module github.com/PuerkitoBio/goquery\n",
@@ -139,9 +141,20 @@ var _modInfoTests = []struct {
 	},
 	{
 		path:    "github.com/rsc/vgotest1",
+		query:   "v0.0.0-20180219223237-a08abb797a67",
 		version: "v0.0.0-20180219223237-a08abb797a67",
 		latest:  true,
 		time:    time.Date(2018, 02, 19, 22, 32, 37, 0, time.UTC),
+	},
+	{
+		path:    "github.com/hxzhao527/legacytest",
+		query:   "master",
+		version: "v2.0.1+incompatible",
+		time:    time.Date(2018, 07, 17, 16, 42, 53, 0, time.UTC),
+		gomod:   "module github.com/hxzhao527/legacytest\n",
+		zip: []string{
+			"x.go",
+		},
 	},
 }
 
@@ -159,7 +172,7 @@ func TestFetchInfo(t *testing.T) {
 	testenv.MustHaveExternalNetwork(t)
 
 	for _, mod := range _modInfoTests {
-		req := buildRequest(mod.path, mod.version, ".info")
+		req := buildRequest(mod.path, mod.query, ".info")
 
 		rr, err := basicCheck(req)
 		if err != nil {
@@ -189,7 +202,7 @@ func TestFetchModFile(t *testing.T) {
 		if len(mod.gomod) == 0 {
 			continue
 		}
-		req := buildRequest(mod.path, mod.version, ".mod")
+		req := buildRequest(mod.path, mod.query, ".mod")
 
 		rr, err := basicCheck(req)
 		if err != nil {
@@ -209,7 +222,7 @@ func TestFetchZip(t *testing.T) {
 		if len(mod.zip) == 0 {
 			continue
 		}
-		req := buildRequest(mod.path, mod.version, ".zip")
+		req := buildRequest(mod.path, mod.query, ".zip")
 
 		rr, err := basicCheck(req)
 		if err != nil {
