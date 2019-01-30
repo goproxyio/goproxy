@@ -41,7 +41,7 @@ func NewProxy(cache string) http.Handler {
 		log.Printf("goproxy: %s request %s\n", r.RemoteAddr, r.URL.Path)
 		info, err := parseModInfoFromUrl(r.URL.Path)
 		if err != nil {
-			ReturnBadRequest(w, err)
+			innerHandle.ServeHTTP(w, r)
 			return
 		}
 		switch suf := info.suf; suf {
