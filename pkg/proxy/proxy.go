@@ -25,12 +25,14 @@ type modInfo struct {
 }
 
 func setupEnv(basedir string) {
-	modfetch.QuietLookup = true // just to hide modfetch/cache.go#127
-	modfetch.PkgMod = filepath.Join(basedir, "pkg", "mod")
+	modfetch.QuietLookup = true                            // just to hide modfetch/cache.go#127
+	modfetch.PkgMod = filepath.Join(basedir, "pkg", "mod") // Setup the pkg file path.Default is
 	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache", "vcs")
 	cfg.CmdName = "mod download" // just to hide modfetch/fetch.go#L87
 }
 
+// NewProxy returns a handler for handling `go mod` requests from clients.
+//
 func NewProxy(cache string) http.Handler {
 	setupEnv(cache)
 
@@ -38,7 +40,19 @@ func NewProxy(cache string) http.Handler {
 	innerHandle = http.FileServer(http.Dir(cacheDir))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("goproxy: %s request %s\n", r.RemoteAddr, r.URL.Path)
+
+		// Request log
+		//
+		// Log Formatting:
+		// 				| Date | RemoteAddr | Result | Tartget path |
+		//				 Reuslt:   Find,Fetch,Not_Find
+		// Log Example:
+		//
+		var err error = nil
+		defer func(err error) {
+			log.Printf("| %s | request %s\n", r.RemoteAddr, r.URL.Path)
+		}(err)
+
 		info, err := parseModInfoFromUrl(r.URL.Path)
 		if err != nil {
 			innerHandle.ServeHTTP(w, r)
@@ -48,7 +62,7 @@ func NewProxy(cache string) http.Handler {
 		case ".info", ".mod", ".zip":
 			{
 				if _, err := os.Stat(filepath.Join(cacheDir, r.URL.Path)); err == nil {
-					// cache files exist on disk
+					// Cache files exist on disk,handle by FileServer
 					innerHandle.ServeHTTP(w, r)
 					return
 				}
