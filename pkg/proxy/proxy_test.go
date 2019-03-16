@@ -32,6 +32,13 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func TestGoversion(t *testing.T) {
+	ret := checkGitVersion()
+	if !ret {
+		t.Error("Error is test TestGoversion")
+	}
+}
+
 var _modInfoTests = []struct {
 	path    string
 	query   string // query
