@@ -24,11 +24,28 @@ type modInfo struct {
 	suf string
 }
 
+func checkGitVersion() bool {
+	var err error
+	var ret []byte
+	cmd := exec.Command("/usr/bin/git", "version")
+	if ret, err = cmd.Output(); err != nil {
+		return false
+	}
+	if strings.HasPrefix(string(ret), "git version 2") {
+		return true
+	}
+	return false
+}
+
 func setupEnv(basedir string) {
 	modfetch.QuietLookup = true // just to hide modfetch/cache.go#127
 	modfetch.PkgMod = filepath.Join(basedir, "pkg", "mod")
 	codehost.WorkRoot = filepath.Join(modfetch.PkgMod, "cache", "vcs")
 	cfg.CmdName = "mod download" // just to hide modfetch/fetch.go#L87
+	isGitValid := checkGitVersion()
+	if !isGitValid {
+		panic("Error in git version, please check your git installed in local, must be great 2.0")
+	}
 }
 
 func NewProxy(cache string) http.Handler {
