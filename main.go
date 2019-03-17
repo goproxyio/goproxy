@@ -8,8 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,6 +26,23 @@ func init() {
 	flag.StringVar(&cacheDir, "cacheDir", "", "go modules cache dir")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
 	flag.Parse()
+	isGitValid := checkGitVersion()
+	if !isGitValid {
+		log.Fatal("Error in git version, please check your git installed in local, must be great 2.0")
+	}
+}
+
+func checkGitVersion() bool {
+	var err error
+	var ret []byte
+	cmd := exec.Command("/usr/bin/git", "version")
+	if ret, err = cmd.Output(); err != nil {
+		return false
+	}
+	if strings.HasPrefix(string(ret), "git version 2") {
+		return true
+	}
+	return false
 }
 
 func main() {
