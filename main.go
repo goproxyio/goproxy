@@ -35,7 +35,7 @@ func init() {
 func checkGitVersion() bool {
 	var err error
 	var ret []byte
-	cmd := exec.Command("/usr/bin/git", "version")
+	cmd := exec.Command("git", "version")
 	if ret, err = cmd.Output(); err != nil {
 		return false
 	}
