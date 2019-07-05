@@ -107,19 +107,30 @@ func NewProxy(cache string) http.Handler {
 				}
 				switch suf {
 				case "/@v/list":
-					if info, err := repo.Versions(""); err != nil {
-						ReturnInternalServerError(w, err)
-					} else {
-						data := strings.Join(info, "\n")
-						ReturnSuccess(w, []byte(data))
-					}
-				case "/@latest":
-					modLatestInfo, err := repo.Latest()
-					if err != nil {
+					modPath := strings.Trim(strings.TrimSuffix(r.URL.Path, "/@v/list"), "/")
+					modPath, err := module.DecodePath(modPath)
+					if err != nil 	{
 						ReturnInternalServerError(w, err)
 						return
 					}
-					ReturnJsonData(w, modLatestInfo)
+
+					modload.LoadBuildList()
+					mods := modload.ListModules([]string{modPath + "@latest"}, false, true)
+					
+					data := []byte(strings.Join(mods[0].Versions, "\n") + "\n")
+					if len(data) == 1 {
+						data = nil
+					}
+					w.Write(data)
+					return
+				case "/@latest":
+					rev, err := repo.Stat("latest")
+					if err != nil {
+						errLogger.Printf("latest failed: %v", err)
+						return
+					}
+					ReturnJsonData(w, rev)
+					return
 				}
 				return
 			}
