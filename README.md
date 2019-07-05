@@ -4,8 +4,7 @@
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Build
-    go generate
-    go build
+    make
 
 ## Started
     
