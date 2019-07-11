@@ -55,7 +55,7 @@ func NewProxy(cache string) http.Handler {
 				realMod, err := getQuery(info.Version.Path, info.Version.Version)
 				if err != nil {
 					errLogger.Printf("goproxy: lookup %s@%s get err %s", info.Path, info.Version.Version, err)
-					ReturnBadRequest(w, err)
+					ReturnNotFound(w, err)
 					return
 				}
 				if realMod.Path != info.Version.Path {
@@ -70,7 +70,7 @@ func NewProxy(cache string) http.Handler {
 							// use Stat instead of InfoFile, because when query-version is master, no infoFile here, maybe bug of go
 							// TODO(hxzhao527): check whether InfoFile have a bug?
 							errLogger.Printf("goproxy: fetch info %s@%s get err %s", info.Path, info.Version.Version, err)
-							ReturnBadRequest(w, err)
+							ReturnNotFound(w, err)
 						} else {
 							ReturnJsonData(w, revInfo)
 						}
@@ -79,7 +79,7 @@ func NewProxy(cache string) http.Handler {
 					{
 						if modFile, err := modfetch.GoModFile(realMod.Path, realMod.Version); err != nil {
 							errLogger.Printf("goproxy: fetch modfile %s@%s get err %s", info.Path, info.Version.Version, err)
-							ReturnBadRequest(w, err)
+							ReturnNotFound(w, err)
 						} else {
 							http.ServeFile(w, r, modFile)
 						}
@@ -89,7 +89,7 @@ func NewProxy(cache string) http.Handler {
 						mod := module.Version{Path: realMod.Path, Version: realMod.Version}
 						if zipFile, err := modfetch.DownloadZip(mod); err != nil {
 							errLogger.Printf("goproxy: download zip %s@%s get err %s", info.Path, info.Version.Version, err)
-							ReturnBadRequest(w, err)
+							ReturnNotFound(w, err)
 						} else {
 							http.ServeFile(w, r, zipFile)
 						}
@@ -101,22 +101,21 @@ func NewProxy(cache string) http.Handler {
 			{
 				repo, err := modfetch.Lookup(info.Path)
 				if err != nil {
-					errLogger.Printf("goproxy: lookup failed: %v", err)
-					ReturnInternalServerError(w, err)
+					ReturnNotFound(w, err)
 					return
 				}
 				switch suf {
 				case "/@v/list":
 					modPath := strings.Trim(strings.TrimSuffix(r.URL.Path, "/@v/list"), "/")
 					modPath, err := module.DecodePath(modPath)
-					if err != nil 	{
-						ReturnInternalServerError(w, err)
+					if err != nil {
+						ReturnNotFound(w, err)
 						return
 					}
 
 					modload.LoadBuildList()
 					mods := modload.ListModules([]string{modPath + "@latest"}, false, true)
-					
+
 					data := []byte(strings.Join(mods[0].Versions, "\n") + "\n")
 					if len(data) == 1 {
 						data = nil
@@ -126,7 +125,7 @@ func NewProxy(cache string) http.Handler {
 				case "/@latest":
 					rev, err := repo.Stat("latest")
 					if err != nil {
-						errLogger.Printf("latest failed: %v", err)
+						ReturnNotFound(w, err)
 						return
 					}
 					ReturnJsonData(w, rev)
