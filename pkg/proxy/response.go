@@ -24,6 +24,13 @@ func ReturnBadRequest(w http.ResponseWriter, err error) {
 	_, _ = w.Write([]byte(msg))
 }
 
+func ReturnNotFound(w http.ResponseWriter, err error) {
+	w.WriteHeader(http.StatusNotFound)
+	msg := fmt.Sprintf("%v", err)
+	errLogger.Printf("goproxy: %s\n", msg)
+	_, _ = w.Write([]byte(msg))
+}
+
 func ReturnSuccess(w http.ResponseWriter, data []byte) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
@@ -32,7 +39,7 @@ func ReturnSuccess(w http.ResponseWriter, data []byte) {
 func ReturnJsonData(w http.ResponseWriter, data interface{}) {
 	js, err := json.Marshal(data)
 	if err != nil {
-		ReturnInternalServerError(w, err)
+		ReturnNotFound(w, err)
 	} else {
 		ReturnSuccess(w, js)
 	}

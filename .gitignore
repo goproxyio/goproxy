@@ -5,3 +5,5 @@ cacheDir/*
 bin/*
 
 internal/
+pkg/*
+!pkg/proxy
