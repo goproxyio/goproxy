@@ -184,7 +184,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if openErr != nil {
 		code := http.StatusNotFound
-		http.Error(w, "not found", code)
+		http.Error(w, openErr.Error(), code)
 		return
 	}
 	defer f.Close()
