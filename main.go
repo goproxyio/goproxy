@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -122,8 +123,8 @@ type ops struct{}
 func (*ops) NewContext(r *http.Request) (context.Context, error) {
 	return context.Background(), nil
 }
-func (*ops) List(ctx context.Context, path string) (proxy.File, error) {
-	escMod, err := module.EscapePath(path)
+func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
+	escMod, err := module.EscapePath(mpath)
 	if err != nil {
 		return nil, err
 	}
@@ -135,17 +136,21 @@ func (*ops) List(ctx context.Context, path string) (proxy.File, error) {
 		Path     string
 		Versions []string
 	}
-	if err := goJSON(&list, "go", "list", "-m", "-json", "-versions", path+"@latest"); err != nil {
+	if err := goJSON(&list, "go", "list", "-m", "-json", "-versions", mpath+"@latest"); err != nil {
 		return nil, err
 	}
-	if list.Path != path {
-		return nil, fmt.Errorf("go list -m: asked for %s but got %s", path, list.Path)
+	if list.Path != mpath {
+		return nil, fmt.Errorf("go list -m: asked for %s but got %s", mpath, list.Path)
 	}
 	data := []byte(strings.Join(list.Versions, "\n") + "\n")
 	if len(data) == 1 {
 		data = nil
 	}
-	ioutil.WriteFile(file, data, 0666)
+	os.MkdirAll(path.Dir(file), 755)
+	if err := ioutil.WriteFile(file, data, 0666); err != nil {
+		return nil, err
+	}
+
 	return os.Open(file)
 }
 func (*ops) Latest(ctx context.Context, path string) (proxy.File, error) {
