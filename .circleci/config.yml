@@ -5,13 +5,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.11
+      - image: circleci/golang:1.12
     working_directory: /go/src/github.com/goproxyio/goproxy/
     steps:
       - checkout
       - run:
           name: install deps
-          command: make generate
+          command: make tidy
       - run:
           name: test self
           command: make test
