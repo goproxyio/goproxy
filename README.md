@@ -3,12 +3,15 @@
 
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
+## Requirements
+    It invokes the local go command to answer requests.
+
 ## Build
     make
 
 ## Started
     
-    ./goproxy -listen=0.0.0.0:80 -cacheDir=/data
+    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
 
 ## Use docker image
 

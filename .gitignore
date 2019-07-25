@@ -3,7 +3,3 @@ go_repos/*
 cacheDir/*
 .idea/*
 bin/*
-
-internal/
-pkg/*
-!pkg/proxy
