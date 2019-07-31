@@ -10,8 +10,35 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
     make
 
 ## Started
+
+
+### Proxy mode    
     
     ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
+
+### Router mode    
+
+Use the -proxy flag switch to "Router mode", which 
+implements route filter to routing private module 
+or public module .
+
+```
+                                         direct
+                      +----------------------------------> private repo
+                      |
+                 match|pattern
+                      |
+                  +---+---+           +----------+
+go get  +-------> |goproxy| +-------> |goproxy.io| +---> golang.org/x/net
+                  +-------+           +----------+
+                 router mode           proxy mode
+```
+
+In Router mode, use the -exclude flag set pattern , direct to the repo which 
+match the module path, pattern are matched to the full path specified, not only 
+to the host component.
+
+    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test -proxy https://goproxy.io -exclude "git.private.domain/[abc]"
 
 ## Use docker image
 
