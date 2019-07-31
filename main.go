@@ -42,8 +42,12 @@ const listExpire = 5 * time.Minute
 
 var listen string
 var cacheDir string
+var proxyHost string
+var excludeHost string
 
 func init() {
+	flag.StringVar(&excludeHost, "exclude", "", "exclude host pattern")
+	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for go modules")
 	flag.StringVar(&cacheDir, "cacheDir", "", "go modules cache dir")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
 	flag.Parse()
@@ -64,6 +68,10 @@ func main() {
 	var env struct {
 		GOPATH string
 	}
+	if cacheDir != "" {
+		downloadRoot = filepath.Join(cacheDir, "pkg/mod/cache/download")
+		os.Setenv("GOPATH", cacheDir)
+	}
 	if err := goJSON(&env, "go", "env", "-json", "GOPATH"); err != nil {
 		log.Fatal(err)
 	}
@@ -73,12 +81,20 @@ func main() {
 	}
 	downloadRoot = filepath.Join(list[0], "pkg/mod/cache/download")
 
-	if cacheDir != "" {
-		downloadRoot = filepath.Join(cacheDir, "pkg/mod/cache/download")
-		os.Setenv("GOPATH", cacheDir)
+	var handle http.Handler
+	if proxyHost != "" {
+		fmt.Fprintf(os.Stderr, "ProxyHost %s\n", proxyHost)
+		if excludeHost != "" {
+			fmt.Fprintf(os.Stderr, "ExcludeHost %s\n", excludeHost)
+		}
+		handle = &logger{proxy.NewRouter(proxy.NewServer(new(ops)), &proxy.RouterOps{
+			Pattern: excludeHost,
+			Proxy:   proxyHost,
+		})}
+	} else {
+		handle = &logger{proxy.NewServer(new(ops))}
 	}
-
-	log.Fatal(http.ListenAndServe(listen, &logger{proxy.NewServer(new(ops))}))
+	log.Fatal(http.ListenAndServe(listen, handle))
 }
 
 // goJSON runs the go command and parses its JSON output into dst.
