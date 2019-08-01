@@ -1,13 +1,13 @@
 FROM golang:alpine AS build
 
-RUN apk add --no-cache -U make
+RUN apk add --no-cache -U make git mercurial subversion bzr fossil
 
 COPY . /src/goproxy
 RUN cd /src/goproxy &&\
     export CGO_ENABLED=0 &&\
     make
 
-FROM alpine:latest
+FROM golang:alpine
 
 RUN apk add --no-cache -U git mercurial subversion bzr fossil
 
