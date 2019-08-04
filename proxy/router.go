@@ -32,7 +32,14 @@ func NewRouter(srv *Server, ops *RouterOps) *Router {
 	}
 	if ops != nil {
 		if remote, err := url.Parse(ops.Proxy); err == nil {
-			rt.proxy = httputil.NewSingleHostReverseProxy(remote)
+			proxy := httputil.NewSingleHostReverseProxy(remote)
+			director := proxy.Director
+			proxy.Director = func(r *http.Request) {
+				director(r)
+				r.Host = remote.Host
+			}
+			rt.proxy = proxy
+
 			rt.proxy.Transport = &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
