@@ -7,11 +7,12 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"regexp"
+	"path"
+	"strings"
 )
 
 // A RouterOps provides the proxy host and the external pattern
-type RouterOps struct {
+type RouterOptions struct {
 	Pattern string
 	Proxy   string
 }
@@ -20,18 +21,18 @@ type RouterOps struct {
 // which implements Route Filter to
 // routing private module or public module .
 type Router struct {
-	srv   *Server
-	proxy *httputil.ReverseProxy
-	regex *regexp.Regexp
+	srv     *Server
+	proxy   *httputil.ReverseProxy
+	pattern string
 }
 
 // NewRouter returns a new Router using the given operations.
-func NewRouter(srv *Server, ops *RouterOps) *Router {
+func NewRouter(srv *Server, opts *RouterOptions) *Router {
 	rt := &Router{
 		srv: srv,
 	}
-	if ops != nil {
-		if remote, err := url.Parse(ops.Proxy); err == nil {
+	if opts != nil {
+		if remote, err := url.Parse(opts.Proxy); err == nil {
 			proxy := httputil.NewSingleHostReverseProxy(remote)
 			director := proxy.Director
 			proxy.Director = func(r *http.Request) {
@@ -44,18 +45,16 @@ func NewRouter(srv *Server, ops *RouterOps) *Router {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			}
 		}
-		if regex, err := regexp.Compile(ops.Pattern); err == nil {
-			rt.regex = regex
-		}
+		rt.pattern = opts.Pattern
 	}
 	return rt
 }
 
 func (rt *Router) Direct(path string) bool {
-	if rt.regex == nil {
+	if rt.pattern == "" {
 		return true
 	}
-	return rt.regex.Match([]byte(path))
+	return GlobsMatchPath(rt.pattern, path)
 }
 
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -67,4 +66,48 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(os.Stderr, "------ --- %s [proxy]\n", r.URL)
 	rt.proxy.ServeHTTP(w, r)
 	return
+}
+
+// GlobsMatchPath reports whether any path prefix of target
+// matches one of the glob patterns (as defined by path.Match)
+// in the comma-separated globs list.
+// It ignores any empty or malformed patterns in the list.
+func GlobsMatchPath(globs, target string) bool {
+	for globs != "" {
+		// Extract next non-empty glob in comma-separated list.
+		var glob string
+		if i := strings.Index(globs, ","); i >= 0 {
+			glob, globs = globs[:i], globs[i+1:]
+		} else {
+			glob, globs = globs, ""
+		}
+		if glob == "" {
+			continue
+		}
+
+		// A glob with N+1 path elements (N slashes) needs to be matched
+		// against the first N+1 path elements of target,
+		// which end just before the N+1'th slash.
+		n := strings.Count(glob, "/")
+		prefix := target
+		// Walk target, counting slashes, truncating at the N+1'th slash.
+		for i := 0; i < len(target); i++ {
+			if target[i] == '/' {
+				if n == 0 {
+					prefix = target[:i]
+					break
+				}
+				n--
+			}
+		}
+		if n > 0 {
+			// Not enough prefix elements.
+			continue
+		}
+		matched, _ := path.Match(glob, prefix)
+		if matched {
+			return true
+		}
+	}
+	return false
 }
