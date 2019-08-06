@@ -2,11 +2,10 @@ package proxy
 
 import (
 	"crypto/tls"
-	"fmt"
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 )
@@ -59,11 +58,11 @@ func (rt *Router) Direct(path string) bool {
 
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if rt.proxy != nil && rt.Direct(r.URL.Path) {
-		fmt.Fprintf(os.Stderr, "------ --- %s [direct]\n", r.URL)
+		log.Printf("------ --- %s [direct]\n", r.URL)
 		rt.srv.ServeHTTP(w, r)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "------ --- %s [proxy]\n", r.URL)
+	log.Printf("------ --- %s [proxy]\n", r.URL)
 	rt.proxy.ServeHTTP(w, r)
 	return
 }

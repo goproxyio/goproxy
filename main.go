@@ -83,9 +83,9 @@ func main() {
 
 	var handle http.Handler
 	if proxyHost != "" {
-		fmt.Fprintf(os.Stderr, "ProxyHost %s\n", proxyHost)
+		log.Printf("ProxyHost %s\n", proxyHost)
 		if excludeHost != "" {
-			fmt.Fprintf(os.Stderr, "ExcludeHost %s\n", excludeHost)
+			log.Printf("ExcludeHost %s\n", excludeHost)
 		}
 		handle = &logger{proxy.NewRouter(proxy.NewServer(new(ops)), &proxy.RouterOptions{
 			Pattern: excludeHost,
@@ -129,7 +129,7 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	rl := &responseLogger{code: 200, ResponseWriter: w}
 	l.h.ServeHTTP(rl, r)
-	fmt.Fprintf(os.Stderr, "%.3fs %d %s\n", time.Since(start).Seconds(), rl.code, r.URL)
+	log.Printf("%.3fs %d %s\n", time.Since(start).Seconds(), rl.code, r.URL)
 }
 
 // An ops is a proxy.ServerOps implementation.
