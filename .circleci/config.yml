@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
 jobs:
-  build:
+  proxy-mode:
     docker:
       - image: circleci/golang:1.12
     working_directory: /go/src/github.com/goproxyio/goproxy/
@@ -25,3 +25,31 @@ jobs:
       - run:
           name: run real test
           command: bash test/get_test.sh
+  router-mode:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/goproxyio/goproxy/
+    steps:
+      - checkout
+      - run:
+          name: install deps
+          command: make tidy
+      - run:
+          name: test self
+          command: make test
+      - run:
+          name: build bin
+          command: make build
+      - run:
+          name: run proxy backgroud to test real
+          command: export GO111MODULE=on && bin/goproxy -proxy https://goproxy.io -exclude "golang.org"
+          background: true
+      - run:
+          name: run real test
+          command: bash test/get_test.sh
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - proxy-mode
+      - router-mode
