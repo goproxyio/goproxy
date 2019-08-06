@@ -60,11 +60,11 @@ func (rt *Router) Direct(path string) bool {
 
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if rt.proxy != nil && rt.Direct(r.URL.Path) {
-		fmt.Fprintf(os.Stdout, "[direct] %s\n", r.URL)
+		fmt.Fprintf(os.Stderr, "------ --- %s [direct]\n", r.URL)
 		rt.srv.ServeHTTP(w, r)
 		return
 	}
-	fmt.Fprintf(os.Stdout, "[proxy] %s\n", r.URL)
+	fmt.Fprintf(os.Stderr, "------ --- %s [proxy]\n", r.URL)
 	rt.proxy.ServeHTTP(w, r)
 	return
 }

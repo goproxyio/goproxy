@@ -126,7 +126,6 @@ func (r *responseLogger) WriteHeader(code int) {
 	r.ResponseWriter.WriteHeader(code)
 }
 func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(os.Stderr, "------ --- %s\n", r.URL)
 	start := time.Now()
 	rl := &responseLogger{code: 200, ResponseWriter: w}
 	l.h.ServeHTTP(rl, r)
