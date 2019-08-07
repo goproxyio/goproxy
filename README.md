@@ -38,7 +38,7 @@ In Router mode, use the -exclude flag set pattern , direct to the repo which
 match the module path, pattern are matched to the full path specified, not only 
 to the host component.
 
-    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test -proxy https://goproxy.io -exclude "git.private.domain/[abc]"
+    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test -proxy https://goproxy.io -exclude "*.corp.example.com,rsc.io/private"
 
 ## Use docker image
 

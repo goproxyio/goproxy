@@ -31,18 +31,25 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 		srv: srv,
 	}
 	if opts != nil {
-		if remote, err := url.Parse(opts.Proxy); err == nil {
-			proxy := httputil.NewSingleHostReverseProxy(remote)
-			director := proxy.Director
-			proxy.Director = func(r *http.Request) {
-				director(r)
-				r.Host = remote.Host
-			}
-			rt.proxy = proxy
+		if opts.Proxy == "" {
+			log.Printf("not set proxy, all direct.")
+			return rt
+		}
+		remote, err := url.Parse(opts.Proxy)
+		if err != nil {
+			log.Printf("parse proxy fail, all direct.")
+			return rt
+		}
+		proxy := httputil.NewSingleHostReverseProxy(remote)
+		director := proxy.Director
+		proxy.Director = func(r *http.Request) {
+			director(r)
+			r.Host = remote.Host
+		}
+		rt.proxy = proxy
 
-			rt.proxy.Transport = &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			}
+		rt.proxy.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		rt.pattern = opts.Pattern
 	}
@@ -51,13 +58,13 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 
 func (rt *Router) Direct(path string) bool {
 	if rt.pattern == "" {
-		return true
+		return false
 	}
 	return GlobsMatchPath(rt.pattern, path)
 }
 
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if rt.proxy != nil && rt.Direct(r.URL.Path) {
+	if rt.proxy == nil || rt.Direct(strings.TrimPrefix(r.URL.Path, "/")) {
 		log.Printf("------ --- %s [direct]\n", r.URL)
 		rt.srv.ServeHTTP(w, r)
 		return
