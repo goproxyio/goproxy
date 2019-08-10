@@ -59,6 +59,10 @@ func init() {
 	if os.Getenv("GIT_SSH") == "" && os.Getenv("GIT_SSH_COMMAND") == "" {
 		os.Setenv("GIT_SSH_COMMAND", "ssh -o ControlMaster=no")
 	}
+
+	if excludeHost != "" {
+		os.Setenv("GOPRIVATE", excludeHost)
+	}
 }
 
 func main() {
