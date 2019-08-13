@@ -7,6 +7,8 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
     It invokes the local go command to answer requests.
 
 ## Build
+    git clone https://github.com/goproxyio/goproxy.git
+    cd goproxy
     make
 
 ## Started
