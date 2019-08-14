@@ -2,7 +2,7 @@ version: "2"
 services:
   goproxy:
     image: goproxy/goproxy:latest
-    command: "goproxy -listen=0.0.0.0:8081 -cacheDir=/ext"
+    command: "-listen=0.0.0.0:8081 -cacheDir=/ext"
     ports:
     - "8081:8081"
     restart: always
