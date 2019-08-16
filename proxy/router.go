@@ -1,19 +1,28 @@
 package proxy
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/tls"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 	"strings"
+	"time"
 )
+
+const ListExpire = 5 * time.Minute
 
 // A RouterOps provides the proxy host and the external pattern
 type RouterOptions struct {
 	Pattern string
 	Proxy   string
+	DownloadRoot string
 }
 
 // A Router is the proxy HTTP server,
@@ -23,6 +32,7 @@ type Router struct {
 	srv     *Server
 	proxy   *httputil.ReverseProxy
 	pattern string
+	downloadRoot string
 }
 
 // NewRouter returns a new Router using the given operations.
@@ -51,7 +61,29 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 		rt.proxy.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
+		rt.proxy.ModifyResponse = func(r *http.Response) error {
+			if r.StatusCode == http.StatusOK {
+				var buf []byte
+				if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+					if gr, err := gzip.NewReader(r.Body); err == nil {
+						defer gr.Close()
+						buf, _ = ioutil.ReadAll(gr)
+						r.Header.Del("Content-Encoding")
+					}
+				} else {
+					buf, _ = ioutil.ReadAll(r.Body)
+				}
+				r.Body = ioutil.NopCloser(bytes.NewReader(buf))
+				if buf != nil {
+					file := filepath.Join(opts.DownloadRoot, r.Request.URL.Path)
+					os.MkdirAll(path.Dir(file), 755)
+					ioutil.WriteFile(file, buf, 0666)
+				}
+			}
+			return nil
+		}
 		rt.pattern = opts.Pattern
+		rt.downloadRoot = opts.DownloadRoot
 	}
 	return rt
 }
@@ -68,6 +100,41 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("------ --- %s [direct]\n", r.URL)
 		rt.srv.ServeHTTP(w, r)
 		return
+	}
+	file := filepath.Join(rt.downloadRoot, r.URL.Path)
+	if info, err := os.Stat(file); err == nil {
+		if f, err := os.Open(file); err == nil {
+			var ctype string
+			defer f.Close()
+			i := strings.Index(r.URL.Path, "/@v/")
+			what := r.URL.Path[i+len("/@v/"):]
+			if what == "list" {
+				if time.Since(info.ModTime()) >= ListExpire {
+					log.Printf("------ --- %s [proxy]\n", r.URL)
+					rt.proxy.ServeHTTP(w, r)
+					return
+				} else {
+					ctype = "text/plain; charset=UTF-8"
+				}
+			} else {
+				ext := path.Ext(what)
+				switch ext {
+					case ".info":
+						ctype = "application/json"
+					case ".mod":
+						ctype = "text/plain; charset=UTF-8"
+					case ".zip":
+						ctype = "application/octet-stream"
+					default:
+						http.Error(w, "request not recognized", http.StatusNotFound)
+						return
+				}
+			}
+			w.Header().Set("Content-Type", ctype)
+			log.Printf("------ --- %s [cached]\n", r.URL)
+			http.ServeContent(w, r, "", info.ModTime(), f)
+			return
+		}
 	}
 	log.Printf("------ --- %s [proxy]\n", r.URL)
 	rt.proxy.ServeHTTP(w, r)

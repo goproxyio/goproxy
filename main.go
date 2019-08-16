@@ -38,7 +38,7 @@ import (
 
 var downloadRoot string
 
-const listExpire = 5 * time.Minute
+const listExpire = proxy.ListExpire
 
 var listen string
 var cacheDir string
@@ -94,6 +94,7 @@ func main() {
 		handle = &logger{proxy.NewRouter(proxy.NewServer(new(ops)), &proxy.RouterOptions{
 			Pattern: excludeHost,
 			Proxy:   proxyHost,
+			DownloadRoot: downloadRoot,
 		})}
 	} else {
 		handle = &logger{proxy.NewServer(new(ops))}
