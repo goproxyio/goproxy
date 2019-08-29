@@ -20,8 +20,8 @@ const ListExpire = 5 * time.Minute
 
 // A RouterOps provides the proxy host and the external pattern
 type RouterOptions struct {
-	Pattern string
-	Proxy   string
+	Pattern      string
+	Proxy        string
 	DownloadRoot string
 }
 
@@ -29,9 +29,9 @@ type RouterOptions struct {
 // which implements Route Filter to
 // routing private module or public module .
 type Router struct {
-	srv     *Server
-	proxy   *httputil.ReverseProxy
-	pattern string
+	srv          *Server
+	proxy        *httputil.ReverseProxy
+	pattern      string
 	downloadRoot string
 }
 
@@ -107,6 +107,11 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			var ctype string
 			defer f.Close()
 			i := strings.Index(r.URL.Path, "/@v/")
+			if i < 0 {
+				http.Error(w, "no such path", http.StatusNotFound)
+				return
+			}
+
 			what := r.URL.Path[i+len("/@v/"):]
 			if what == "list" {
 				if time.Since(info.ModTime()) >= ListExpire {
@@ -119,15 +124,15 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			} else {
 				ext := path.Ext(what)
 				switch ext {
-					case ".info":
-						ctype = "application/json"
-					case ".mod":
-						ctype = "text/plain; charset=UTF-8"
-					case ".zip":
-						ctype = "application/octet-stream"
-					default:
-						http.Error(w, "request not recognized", http.StatusNotFound)
-						return
+				case ".info":
+					ctype = "application/json"
+				case ".mod":
+					ctype = "text/plain; charset=UTF-8"
+				case ".zip":
+					ctype = "application/octet-stream"
+				default:
+					http.Error(w, "request not recognized", http.StatusNotFound)
+					return
 				}
 			}
 			w.Header().Set("Content-Type", ctype)
