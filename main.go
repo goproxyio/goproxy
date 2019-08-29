@@ -92,8 +92,8 @@ func main() {
 			log.Printf("ExcludeHost %s\n", excludeHost)
 		}
 		handle = &logger{proxy.NewRouter(proxy.NewServer(new(ops)), &proxy.RouterOptions{
-			Pattern: excludeHost,
-			Proxy:   proxyHost,
+			Pattern:      excludeHost,
+			Proxy:        proxyHost,
 			DownloadRoot: downloadRoot,
 		})}
 	} else {
