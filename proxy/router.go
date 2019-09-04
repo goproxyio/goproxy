@@ -59,6 +59,7 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 		rt.proxy = proxy
 
 		rt.proxy.Transport = &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		rt.proxy.ModifyResponse = func(r *http.Response) error {
