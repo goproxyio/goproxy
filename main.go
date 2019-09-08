@@ -96,7 +96,7 @@ func main() {
 	}()
 
 	s := make(chan os.Signal, 1)
-	signal.Notify(s, os.Interrupt, syscall.SIGTERM, syscall.SIGTERM)
+	signal.Notify(s, os.Interrupt, syscall.SIGTERM)
 	<-s
 	log.Println("Making a graceful shutdown...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
