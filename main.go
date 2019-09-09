@@ -174,7 +174,7 @@ func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	file := filepath.Join(downloadRoot, escMod+"/@v/listproxy")
+	file := filepath.Join(downloadRoot, escMod+"/@v/list")
 	if info, err := os.Stat(file); err == nil && time.Since(info.ModTime()) < listExpire {
 		return os.Open(file)
 	}
