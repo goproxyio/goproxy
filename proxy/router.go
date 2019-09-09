@@ -77,7 +77,7 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 				r.Body = ioutil.NopCloser(bytes.NewReader(buf))
 				if buf != nil {
 					file := filepath.Join(opts.DownloadRoot, r.Request.URL.Path)
-					os.MkdirAll(path.Dir(file), 755)
+					os.MkdirAll(path.Dir(file), os.ModePerm)
 					ioutil.WriteFile(file, buf, 0666)
 				}
 			}
