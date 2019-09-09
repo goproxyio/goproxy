@@ -191,7 +191,11 @@ func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
 	if len(data) == 1 {
 		data = nil
 	}
-	os.MkdirAll(path.Dir(file), 755)
+	err = os.MkdirAll(path.Dir(file), os.ModePerm)
+	if err != nil {
+		log.Printf("make cache dir failed, err: %v.", err)
+		return nil, err
+	}
 	if err := ioutil.WriteFile(file, data, 0666); err != nil {
 		return nil, err
 	}
