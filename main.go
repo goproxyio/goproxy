@@ -65,6 +65,8 @@ func init() {
 	if excludeHost != "" {
 		os.Setenv("GOPRIVATE", excludeHost)
 	}
+
+	downloadRoot = getDownloadRoot()
 }
 
 func main() {
@@ -80,7 +82,7 @@ func main() {
 		handle = &logger{proxy.NewRouter(proxy.NewServer(new(ops)), &proxy.RouterOptions{
 			Pattern:      excludeHost,
 			Proxy:        proxyHost,
-			DownloadRoot: getDownloadRoot(),
+			DownloadRoot: downloadRoot,
 		})}
 	} else {
 		handle = &logger{proxy.NewServer(new(ops))}
@@ -113,9 +115,8 @@ func getDownloadRoot() string {
 		GOPATH string
 	}
 	if cacheDir != "" {
-		downloadRoot = filepath.Join(cacheDir, "pkg/mod/cache/download")
 		os.Setenv("GOPATH", cacheDir)
-		return downloadRoot
+		return filepath.Join(cacheDir, "pkg/mod/cache/download")
 	}
 	if err := goJSON(&env, "go", "env", "-json", "GOPATH"); err != nil {
 		log.Fatal(err)
