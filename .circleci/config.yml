@@ -25,6 +25,7 @@ jobs:
       - run:
           name: run real test
           command: bash test/get_test.sh
+          no_output_timeout: 20m
   router-mode:
     docker:
       - image: circleci/golang:1.13
