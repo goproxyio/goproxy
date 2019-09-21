@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/goproxyio/goproxy/renameio"
 )
 
 const ListExpire = 5 * time.Minute
@@ -66,19 +68,30 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 			if r.StatusCode == http.StatusOK {
 				var buf []byte
 				if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
-					if gr, err := gzip.NewReader(r.Body); err == nil {
-						defer gr.Close()
-						buf, _ = ioutil.ReadAll(gr)
-						r.Header.Del("Content-Encoding")
+					gr, err := gzip.NewReader(r.Body)
+					if err != nil {
+						return err
 					}
+					defer gr.Close()
+					buf, err = ioutil.ReadAll(gr)
+					if err != nil {
+						return err
+					}
+					r.Header.Del("Content-Encoding")
 				} else {
-					buf, _ = ioutil.ReadAll(r.Body)
+					buf, err = ioutil.ReadAll(r.Body)
+					if err != nil {
+						return err
+					}
 				}
 				r.Body = ioutil.NopCloser(bytes.NewReader(buf))
 				if buf != nil {
 					file := filepath.Join(opts.DownloadRoot, r.Request.URL.Path)
 					os.MkdirAll(path.Dir(file), os.ModePerm)
-					ioutil.WriteFile(file, buf, 0666)
+					err = renameio.WriteFile(file, buf, 0666)
+					if err != nil {
+						return err
+					}
 				}
 			}
 			return nil
