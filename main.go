@@ -66,6 +66,9 @@ func init() {
 		os.Setenv("GOPRIVATE", excludeHost)
 	}
 
+	// Enable Go module
+	os.Setenv("GO111MODULE", "on")
+
 	downloadRoot = getDownloadRoot()
 }
 
