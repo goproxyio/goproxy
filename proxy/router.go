@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goproxyio/goproxy/renameio"
+	"github.com/goproxyio/goproxy/v2/renameio"
 )
 
 const ListExpire = 5 * time.Minute

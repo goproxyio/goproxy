@@ -33,7 +33,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/goproxyio/goproxy/proxy"
+	"github.com/goproxyio/goproxy/v2/proxy"
 
 	"golang.org/x/mod/module"
 )
