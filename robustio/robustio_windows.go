@@ -6,12 +6,13 @@ package robustio
 
 import (
 	"errors"
-	"internal/syscall/windows"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/goproxyio/windows"
 )
 
 const arbitraryTimeout = 500 * time.Millisecond
