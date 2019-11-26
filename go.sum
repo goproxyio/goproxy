@@ -1,3 +1,5 @@
+github.com/goproxyio/windows v0.0.0-20191126033816-f4a809841617 h1:geXWJzWrEzC5S4MjTi8N+fhzuSYgdf4FwcYb4OI/YGU=
+github.com/goproxyio/windows v0.0.0-20191126033816-f4a809841617/go.mod h1:dlHwZrQaHMQLGIISiDGKq3wKQhZDsRcZ2+EN4k0uGTc=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/mod v0.1.0 h1:sfUMP1Gu8qASkorDVjnMuvgJzwFbTZSeXFiGBYAVdl4=
