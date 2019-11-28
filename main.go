@@ -119,7 +119,7 @@ func getDownloadRoot() string {
 	}
 	if cacheDir != "" {
 		os.Setenv("GOPATH", cacheDir)
-		return filepath.Join(cacheDir, "pkg/mod/cache/download")
+		return filepath.Join(cacheDir, "pkg", "mod", "cache", "download")
 	}
 	if err := goJSON(&env, "go", "env", "-json", "GOPATH"); err != nil {
 		log.Fatal(err)
@@ -128,7 +128,7 @@ func getDownloadRoot() string {
 	if len(list) == 0 || list[0] == "" {
 		log.Fatalf("missing $GOPATH")
 	}
-	return filepath.Join(list[0], "pkg/mod/cache/download")
+	return filepath.Join(list[0], "pkg", "mod", "cache", "download")
 }
 
 // goJSON runs the go command and parses its JSON output into dst.
@@ -177,7 +177,7 @@ func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	file := filepath.Join(downloadRoot, escMod+"/@v/list")
+	file := filepath.Join(downloadRoot, escMod, "@v", "list")
 	if info, err := os.Stat(file); err == nil && time.Since(info.ModTime()) < listExpire {
 		return os.Open(file)
 	}
