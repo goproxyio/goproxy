@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goproxyio/goproxy/renameio"
+	"github.com/goproxyio/goproxy/v2/renameio"
 )
 
 const ListExpire = 5 * time.Minute
@@ -115,11 +115,25 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rt.srv.ServeHTTP(w, r)
 		return
 	}
+
 	file := filepath.Join(rt.downloadRoot, r.URL.Path)
 	if info, err := os.Stat(file); err == nil {
 		if f, err := os.Open(file); err == nil {
 			var ctype string
 			defer f.Close()
+			if strings.HasSuffix(r.URL.Path, "/@latest") {
+				if time.Since(info.ModTime()) >= ListExpire {
+					log.Printf("------ --- %s [proxy]\n", r.URL)
+					rt.proxy.ServeHTTP(w, r)
+				} else {
+					ctype = "text/plain; charset=UTF-8"
+					w.Header().Set("Content-Type", ctype)
+					log.Printf("------ --- %s [cached]\n", r.URL)
+					http.ServeContent(w, r, "", info.ModTime(), f)
+				}
+				return
+			}
+
 			i := strings.Index(r.URL.Path, "/@v/")
 			if i < 0 {
 				http.Error(w, "no such path", http.StatusNotFound)

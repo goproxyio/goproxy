@@ -5,6 +5,7 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Requirements
     It invokes the local go command to answer requests.
+    The default cacheDir is GOPATH, you can set it up by yourself according to the situation.
 
 ## Build
     git clone https://github.com/goproxyio/goproxy.git
@@ -17,6 +18,9 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 ### Proxy mode    
     
     ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
+
+    If you run `go get -v pkg` in the proxy machine, should set a new GOPATH which is not different from the old GOPATH, or mayebe deadlock.
+    See the file test/get_test.sh.
 
 ### Router mode    
 

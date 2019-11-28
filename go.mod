@@ -1,4 +1,4 @@
-module github.com/goproxyio/goproxy
+module github.com/goproxyio/goproxy/v2
 
 go 1.12
 
