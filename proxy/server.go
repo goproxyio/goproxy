@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goproxyio/goproxy/v2/sumdb"
+
 	"golang.org/x/mod/module"
 )
 
@@ -119,6 +121,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// sumdb handler
+	if strings.HasPrefix(r.URL.Path, "/sumdb/") {
+		sumdb.Handler(w, r)
+		return
+	}
+
 	i := strings.Index(r.URL.Path, "/@")
 	if i < 0 {
 		http.Error(w, "no such path", http.StatusNotFound)
