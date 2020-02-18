@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/goproxyio/goproxy/v2/renameio"
+	"github.com/goproxyio/goproxy/v2/sumdb"
 )
 
 const ListExpire = 5 * time.Minute
@@ -110,6 +111,12 @@ func (rt *Router) Direct(path string) bool {
 }
 
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// sumdb handler
+	if strings.HasPrefix(r.URL.Path, "/sumdb/") {
+		sumdb.Handler(w, r)
+		return
+	}
+
 	if rt.proxy == nil || rt.Direct(strings.TrimPrefix(r.URL.Path, "/")) {
 		log.Printf("------ --- %s [direct]\n", r.URL)
 		rt.srv.ServeHTTP(w, r)
