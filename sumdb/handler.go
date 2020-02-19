@@ -20,7 +20,7 @@ var supportedSumDB = []string{
 
 func init() {
 	go func() {
-		p := "https://sum.google.com"
+		p := "https://sum.golang.org"
 		_, err := http.Get(p)
 		if err == nil {
 			enableGoogleSumDB = true
