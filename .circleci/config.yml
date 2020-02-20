@@ -19,7 +19,7 @@ jobs:
           name: build bin
           command: make build
       - run:
-          name: run proxy backgroud to test real
+          name: run proxy background to test real
           command: export GO111MODULE=on && bin/goproxy
           background: true
       - run:
@@ -41,7 +41,7 @@ jobs:
           name: build bin
           command: make build
       - run:
-          name: run proxy backgroud to test real
+          name: run proxy background to test real
           command: export GO111MODULE=on && bin/goproxy -proxy https://goproxy.io -exclude "golang.org"
           background: true
       - run:
