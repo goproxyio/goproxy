@@ -2,4 +2,4 @@ goproxy
 go_repos/*
 cacheDir/*
 .idea/*
-bin/*
+bin/
