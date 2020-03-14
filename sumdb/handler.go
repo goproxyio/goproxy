@@ -35,12 +35,17 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, supported := range supportedSumDB {
-		uri := fmt.Sprintf("/sumdb/%s/supported", supported)
-		if r.URL.Path == uri {
-			w.WriteHeader(http.StatusOK)
-			return
+	if strings.HasSuffix(r.URL.Path, "/supported") {
+		for _, supported := range supportedSumDB {
+			uri := fmt.Sprintf("/sumdb/%s/supported", supported)
+			if r.URL.Path == uri {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
 		}
+
+		w.WriteHeader(http.StatusGone)
+		return
 	}
 
 	p := "https://" + strings.TrimPrefix(r.URL.Path, "/sumdb/")
