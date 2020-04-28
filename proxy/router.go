@@ -19,9 +19,10 @@ import (
 	"github.com/goproxyio/goproxy/v2/sumdb"
 )
 
+// ListExpire list data expire data duration.
 const ListExpire = 5 * time.Minute
 
-// A RouterOps provides the proxy host and the external pattern
+// RouterOptions provides the proxy host and the external pattern
 type RouterOptions struct {
 	Pattern      string
 	Proxy        string
@@ -103,6 +104,7 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 	return rt
 }
 
+// Direct decides whether a path should directly access.
 func (rt *Router) Direct(path string) bool {
 	if rt.pattern == "" {
 		return false
@@ -153,9 +155,8 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					log.Printf("------ --- %s [proxy]\n", r.URL)
 					rt.proxy.ServeHTTP(w, r)
 					return
-				} else {
-					ctype = "text/plain; charset=UTF-8"
 				}
+				ctype = "text/plain; charset=UTF-8"
 			} else {
 				ext := path.Ext(what)
 				switch ext {
