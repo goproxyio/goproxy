@@ -1,5 +1,8 @@
+# GOPROXY
 
-# GOPROXY [![CircleCI](https://circleci.com/gh/goproxyio/goproxy.svg?style=svg)](https://circleci.com/gh/goproxyio/goproxy)
+[![CircleCI](https://circleci.com/gh/goproxyio/goproxy.svg?style=svg)](https://circleci.com/gh/goproxyio/goproxy)
+[![Go Report Card](https://goreportcard.com/badge/github.com/goproxyio/goproxy)](https://goreportcard.com/report/github.com/goproxyio/goproxy)
+[![GoDoc](https://godoc.org/github.com/goproxyio/goproxy?status.svg)](https://godoc.org/github.com/goproxyio/goproxy)
 
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
