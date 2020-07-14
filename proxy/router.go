@@ -67,7 +67,7 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 		rt.proxy.ModifyResponse = func(r *http.Response) error {
-			if r.StatusCode == http.StatusOK {
+			if r.StatusCode == http.StatusOK || r.StatusCode == http.StatusFound {
 				var buf []byte
 				if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
 					gr, err := gzip.NewReader(r.Body)
