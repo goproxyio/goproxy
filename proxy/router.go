@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -87,6 +88,53 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 					}
 				}
 				r.Body = ioutil.NopCloser(bytes.NewReader(buf))
+				if buf != nil {
+					file := filepath.Join(opts.DownloadRoot, r.Request.URL.Path)
+					os.MkdirAll(path.Dir(file), os.ModePerm)
+					err = renameio.WriteFile(file, buf, 0666)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			// support 302 status code.
+			if r.StatusCode == http.StatusFound {
+				loc := r.Header.Get("Location")
+				if loc == "" {
+					return fmt.Errorf("%d response missing Location header", r.StatusCode)
+				}
+
+				// TODO: location is relative.
+				_, err := url.Parse(loc)
+				if err != nil {
+					return fmt.Errorf("failed to parse Location header %q: %v", loc, err)
+				}
+				resp, err := http.Get(loc)
+				if err != nil {
+					return err
+				}
+				defer resp.Body.Close()
+
+				var buf []byte
+				if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
+					gr, err := gzip.NewReader(resp.Body)
+					if err != nil {
+						return err
+					}
+					defer gr.Close()
+					buf, err = ioutil.ReadAll(gr)
+					if err != nil {
+						return err
+					}
+					resp.Header.Del("Content-Encoding")
+				} else {
+					buf, err = ioutil.ReadAll(resp.Body)
+					if err != nil {
+						return err
+					}
+				}
+				resp.Body = ioutil.NopCloser(bytes.NewReader(buf))
 				if buf != nil {
 					file := filepath.Join(opts.DownloadRoot, r.Request.URL.Path)
 					os.MkdirAll(path.Dir(file), os.ModePerm)
