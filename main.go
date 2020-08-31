@@ -72,6 +72,7 @@ func init() {
 	os.Setenv("GOSUMDB", "off")
 
 	downloadRoot = getDownloadRoot()
+	os.Setenv("GOMODCACHE", downloadRoot)
 }
 
 func main() {
