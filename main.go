@@ -33,6 +33,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/goproxyio/goproxy/v2/netrc"
 	"github.com/goproxyio/goproxy/v2/proxy"
 
 	"golang.org/x/mod/module"
@@ -73,6 +74,9 @@ func init() {
 
 	downloadRoot = getDownloadRoot()
 	os.Setenv("GOMODCACHE", downloadRoot)
+	if err := netrc.GenerateDotNetrcFile(); err != nil {
+		log.Fatalf("Failed to generate .netrc file, Error: %s", err.Error())
+	}
 }
 
 func main() {
@@ -140,6 +144,8 @@ func goJSON(dst interface{}, command ...string) error {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	cmd.Env = os.Environ()
+	fmt.Println(cmd.Env)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("%s:\n%s%s", strings.Join(command, " "), stderr.String(), stdout.String())
 	}

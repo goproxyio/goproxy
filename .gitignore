@@ -3,3 +3,5 @@ go_repos/*
 cacheDir/*
 .idea/*
 bin/
+.netrc
+.env
