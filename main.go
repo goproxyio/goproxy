@@ -48,9 +48,9 @@ var proxyHost string
 var excludeHost string
 
 func init() {
-	flag.StringVar(&excludeHost, "exclude", "", "exclude host pattern")
-	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for go modules")
-	flag.StringVar(&cacheDir, "cacheDir", "", "go modules cache dir")
+	flag.StringVar(&excludeHost, "exclude", "", "exclude host pattern, you can exclude internal Git services")
+	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for Go Modules, recommend use https://gopropxy.io")
+	flag.StringVar(&cacheDir, "cacheDir", "", "Go Modules cache dir, default is $GOPATH/pkg/mod/cache/download")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
 	flag.Parse()
 
