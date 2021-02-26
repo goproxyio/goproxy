@@ -31,11 +31,6 @@ func init() {
 
 //Handler handles sumdb request
 func Handler(w http.ResponseWriter, r *http.Request) {
-	if !enableGoogleSumDB {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-
 	if strings.HasSuffix(r.URL.Path, "/supported") {
 		for _, supported := range supportedSumDB {
 			uri := fmt.Sprintf("/sumdb/%s/supported", supported)
@@ -46,6 +41,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusGone)
+		return
+	}
+
+	if !enableGoogleSumDB {
+		sumViaGoproxy(w, r)
 		return
 	}
 
@@ -69,6 +69,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, err.Error())
 		return
 	}
+	return
+}
 
+func sumViaGoproxy(w http.ResponseWriter, r *http.Request) {
+	p := "https://goproxy.io" + r.URL.Path
+	_, err := url.Parse(p)
+	if err != nil {
+		w.WriteHeader(http.StatusGone)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+
+	resp, err := http.Get(p)
+	if err != nil {
+		w.WriteHeader(http.StatusGone)
+		fmt.Fprintf(w, err.Error())
+		return
+	}
+	defer resp.Body.Close()
+	w.WriteHeader(resp.StatusCode)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		fmt.Fprintf(w, err.Error())
+		return
+	}
 	return
 }
