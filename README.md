@@ -22,8 +22,8 @@ A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
     ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
 
-    If you run `go get -v pkg` in the proxy machine, should set a new GOPATH which is different from the old GOPATH, or mayebe deadlock.
-    See the file test/get_test.sh.
+If you run `go get -v pkg` in the proxy machine, should set a new GOPATH which is different from the old GOPATH, or mayebe deadlock.
+See the file test/get_test.sh.
 
 ### Router mode    
 
