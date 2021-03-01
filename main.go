@@ -72,7 +72,6 @@ func init() {
 	os.Setenv("GOSUMDB", "off")
 
 	downloadRoot = getDownloadRoot()
-	os.Setenv("GOMODCACHE", downloadRoot)
 }
 
 func main() {
@@ -121,7 +120,7 @@ func getDownloadRoot() string {
 		GOPATH string
 	}
 	if cacheDir != "" {
-		os.Setenv("GOPATH", cacheDir)
+		os.Setenv("GOMODCACHE", filepath.Join(cacheDir, "pkg", "mod"))
 		return filepath.Join(cacheDir, "pkg", "mod", "cache", "download")
 	}
 	if err := goJSON(&env, "go", "env", "-json", "GOPATH"); err != nil {
@@ -131,6 +130,7 @@ func getDownloadRoot() string {
 	if len(list) == 0 || list[0] == "" {
 		log.Fatalf("missing $GOPATH")
 	}
+	os.Setenv("GOMODCACHE", filepath.Join(list[0], "pkg", "mod"))
 	return filepath.Join(list[0], "pkg", "mod", "cache", "download")
 }
 
