@@ -221,8 +221,13 @@ type memFile struct {
 	stat memStat
 }
 
-func (f *memFile) Close() error                             { return nil }
-func (f *memFile) Stat() (os.FileInfo, error)               { return &f.stat, nil }
+// Close closes file.
+func (f *memFile) Close() error { return nil }
+
+// Stat stats file.
+func (f *memFile) Stat() (os.FileInfo, error) { return &f.stat, nil }
+
+// Readdir read dir.
 func (f *memFile) Readdir(count int) ([]os.FileInfo, error) { return nil, os.ErrInvalid }
 
 type memStat struct {
@@ -230,12 +235,23 @@ type memStat struct {
 	size int64
 }
 
-func (s *memStat) Name() string       { return "memfile" }
-func (s *memStat) Size() int64        { return s.size }
-func (s *memStat) Mode() os.FileMode  { return 0444 }
+// Name returns file name.
+func (s *memStat) Name() string { return "memfile" }
+
+// Size returns file size.
+func (s *memStat) Size() int64 { return s.size }
+
+// Mode returns file mode.
+func (s *memStat) Mode() os.FileMode { return 0444 }
+
+// ModTime returns file modtime.
 func (s *memStat) ModTime() time.Time { return s.t }
-func (s *memStat) IsDir() bool        { return false }
-func (s *memStat) Sys() interface{}   { return nil }
+
+// IsDir returns if file is a dir.
+func (s *memStat) IsDir() bool { return false }
+
+// Sys return nil.
+func (s *memStat) Sys() interface{} { return nil }
 
 // NewInfo returns a formatted info file for the given version, time pair.
 // The version should be a canonical semantic version.
