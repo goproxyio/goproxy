@@ -1,6 +1,6 @@
 golang.org/x/net@latest
 github.com/oiooj/agent@v0.2.2
-github.com/micro/go-api/resolver@v0.5.0
+github.com/davecgh/go-spew@v1.1.1
 cloud.google.com/go
 golang.org/x/tools/cmd/gopls
 golang.org/x/tools/cmd/guru@latest
