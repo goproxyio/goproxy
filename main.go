@@ -35,6 +35,7 @@ import (
 
 	"github.com/goproxyio/goproxy/v2/proxy"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/mod/module"
 )
 
@@ -42,7 +43,7 @@ var downloadRoot string
 
 const listExpire = proxy.ListExpire
 
-var listen string
+var listen, promListen string
 var cacheDir string
 var proxyHost string
 var excludeHost string
@@ -166,6 +167,13 @@ func (r *responseLogger) WriteHeader(code int) {
 
 // ServeHTTP implements http handler.
 func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// Prometheus metrics
+	if r.URL.Path == "/metrics" {
+		promhttp.Handler().ServeHTTP(w, r)
+		return
+	}
+
 	start := time.Now()
 	rl := &responseLogger{code: 200, ResponseWriter: w}
 	l.h.ServeHTTP(rl, r)
