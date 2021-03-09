@@ -18,7 +18,38 @@ import (
 
 	"github.com/goproxyio/goproxy/v2/renameio"
 	"github.com/goproxyio/goproxy/v2/sumdb"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var (
+	totalRequest = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "goproxy",
+		Subsystem: "router",
+		Name:      "request_total",
+		Help:      "total request in HTTP",
+	}, []string{"mode", "status"})
+)
+
+func init() {
+	prometheus.MustRegister(totalRequest)
+}
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	status string
+}
+
+func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+	// WriteHeader(int) is not called if our response implicitly returns 200 OK, so
+	// we default to that status code.
+	return &loggingResponseWriter{w, http.StatusText(http.StatusOK)}
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.status = http.StatusText(code)
+	lrw.ResponseWriter.WriteHeader(code)
+}
 
 // ListExpire list data expire data duration.
 const ListExpire = 5 * time.Minute
@@ -167,15 +198,18 @@ func (rt *Router) Direct(path string) bool {
 
 // ServveHTTP implements http handler.
 func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	lw := NewLoggingResponseWriter(w)
 	// sumdb handler
 	if strings.HasPrefix(r.URL.Path, "/sumdb/") {
-		sumdb.Handler(w, r)
+		sumdb.Handler(lw, r)
+		totalRequest.With(prometheus.Labels{"mode": "sumdb", "status": lw.status}).Inc()
 		return
 	}
 
 	if rt.proxy == nil || rt.Direct(strings.TrimPrefix(r.URL.Path, "/")) {
 		log.Printf("------ --- %s [direct]\n", r.URL)
-		rt.srv.ServeHTTP(w, r)
+		rt.srv.ServeHTTP(lw, r)
+		totalRequest.With(prometheus.Labels{"mode": "direct", "status": lw.status}).Inc()
 		return
 	}
 
@@ -187,19 +221,22 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if strings.HasSuffix(r.URL.Path, "/@latest") {
 				if time.Since(info.ModTime()) >= ListExpire {
 					log.Printf("------ --- %s [proxy]\n", r.URL)
-					rt.proxy.ServeHTTP(w, r)
+					rt.proxy.ServeHTTP(lw, r)
+					totalRequest.With(prometheus.Labels{"mode": "proxy", "status": lw.status}).Inc()
 				} else {
 					ctype = "text/plain; charset=UTF-8"
-					w.Header().Set("Content-Type", ctype)
+					lw.Header().Set("Content-Type", ctype)
 					log.Printf("------ --- %s [cached]\n", r.URL)
-					http.ServeContent(w, r, "", info.ModTime(), f)
+					http.ServeContent(lw, r, "", info.ModTime(), f)
+					totalRequest.With(prometheus.Labels{"mode": "cached", "status": lw.status}).Inc()
 				}
 				return
 			}
 
 			i := strings.Index(r.URL.Path, "/@v/")
 			if i < 0 {
-				http.Error(w, "no such path", http.StatusNotFound)
+				http.Error(lw, "no such path", http.StatusNotFound)
+				totalRequest.With(prometheus.Labels{"mode": "proxy", "status": lw.status}).Inc()
 				return
 			}
 
@@ -207,7 +244,8 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			if what == "list" {
 				if time.Since(info.ModTime()) >= ListExpire {
 					log.Printf("------ --- %s [proxy]\n", r.URL)
-					rt.proxy.ServeHTTP(w, r)
+					rt.proxy.ServeHTTP(lw, r)
+					totalRequest.With(prometheus.Labels{"mode": "proxy", "status": lw.status}).Inc()
 					return
 				}
 				ctype = "text/plain; charset=UTF-8"
@@ -221,18 +259,21 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				case ".zip":
 					ctype = "application/octet-stream"
 				default:
-					http.Error(w, "request not recognized", http.StatusNotFound)
+					http.Error(lw, "request not recognized", http.StatusNotFound)
+					totalRequest.With(prometheus.Labels{"mode": "proxy", "status": lw.status}).Inc()
 					return
 				}
 			}
-			w.Header().Set("Content-Type", ctype)
+			lw.Header().Set("Content-Type", ctype)
 			log.Printf("------ --- %s [cached]\n", r.URL)
-			http.ServeContent(w, r, "", info.ModTime(), f)
+			http.ServeContent(lw, r, "", info.ModTime(), f)
+			totalRequest.With(prometheus.Labels{"mode": "cached", "status": lw.status}).Inc()
 			return
 		}
 	}
 	log.Printf("------ --- %s [proxy]\n", r.URL)
-	rt.proxy.ServeHTTP(w, r)
+	rt.proxy.ServeHTTP(lw, r)
+	totalRequest.With(prometheus.Labels{"mode": "proxy", "status": lw.status}).Inc()
 	return
 }
 

@@ -35,6 +35,7 @@ import (
 
 	"github.com/goproxyio/goproxy/v2/proxy"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/mod/module"
 )
 
@@ -42,7 +43,7 @@ var downloadRoot string
 
 const listExpire = proxy.ListExpire
 
-var listen string
+var listen, promListen string
 var cacheDir string
 var proxyHost string
 var excludeHost string
@@ -52,6 +53,7 @@ func init() {
 	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for Go Modules, recommend use https://gopropxy.io")
 	flag.StringVar(&cacheDir, "cacheDir", "", "Go Modules cache dir, default is $GOPATH/pkg/mod/cache/download")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
+	flag.StringVar(&promListen, "metrics", "0.0.0.0:8000", "service prometheus metrics export address, default is 0.0.0.0:8000/metrics")
 	flag.Parse()
 
 	if os.Getenv("GIT_TERMINAL_PROMPT") == "" {
@@ -100,6 +102,11 @@ func main() {
 				log.Fatal(err)
 			}
 		}
+	}()
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(promListen, nil)
 	}()
 
 	s := make(chan os.Signal, 1)
