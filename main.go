@@ -183,7 +183,7 @@ func (l *logger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // An ops is a proxy.ServerOps implementation.
 type ops struct{}
 
-// NewContext crates a context.
+// NewContext creates a context.
 func (*ops) NewContext(r *http.Request) (context.Context, error) {
 	return context.Background(), nil
 }
@@ -224,7 +224,7 @@ func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
 	return os.Open(file)
 }
 
-// Latest fetch latest file.
+// Latest fetches latest file.
 func (*ops) Latest(ctx context.Context, path string) (proxy.File, error) {
 	d, err := download(module.Version{Path: path, Version: "latest"})
 	if err != nil {
@@ -233,7 +233,7 @@ func (*ops) Latest(ctx context.Context, path string) (proxy.File, error) {
 	return os.Open(d.Info)
 }
 
-// Info fetch info file.
+// Info fetches info file.
 func (*ops) Info(ctx context.Context, m module.Version) (proxy.File, error) {
 	d, err := download(m)
 	if err != nil {
@@ -242,7 +242,7 @@ func (*ops) Info(ctx context.Context, m module.Version) (proxy.File, error) {
 	return os.Open(d.Info)
 }
 
-// GoMod fetch go mod file.
+// GoMod fetches go mod file.
 func (*ops) GoMod(ctx context.Context, m module.Version) (proxy.File, error) {
 	d, err := download(m)
 	if err != nil {
@@ -251,7 +251,7 @@ func (*ops) GoMod(ctx context.Context, m module.Version) (proxy.File, error) {
 	return os.Open(d.GoMod)
 }
 
-// Zip fetch zip file.
+// Zip fetches zip file.
 func (*ops) Zip(ctx context.Context, m module.Version) (proxy.File, error) {
 	d, err := download(m)
 	if err != nil {
