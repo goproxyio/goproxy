@@ -58,6 +58,8 @@ func (router *Router) customModResponse(r *http.Response) error {
 				return err
 			}
 			r.Header.Del("Content-Encoding")
+			// rewrite content-length header due to the decompressed data will be refilled in the body
+			r.Header.Set("Content-Length", fmt.Sprint(len(buf)))
 		} else {
 			buf, err = ioutil.ReadAll(r.Body)
 			if err != nil {
