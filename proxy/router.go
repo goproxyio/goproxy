@@ -30,6 +30,7 @@ type RouterOptions struct {
 	Pattern      string
 	Proxy        string
 	DownloadRoot string
+	CacheExpire  time.Duration
 }
 
 // A Router is the proxy HTTP server,
@@ -41,6 +42,7 @@ type Router struct {
 	proxy        *httputil.ReverseProxy
 	pattern      string
 	downloadRoot string
+	cacheExpire  time.Duration
 }
 
 func (router *Router) customModResponse(r *http.Response) error {
@@ -157,6 +159,7 @@ func NewRouter(srv *Server, opts *RouterOptions) *Router {
 		rt.proxy.ModifyResponse = rt.customModResponse
 		rt.pattern = opts.Pattern
 		rt.downloadRoot = opts.DownloadRoot
+		rt.cacheExpire = opts.CacheExpire
 	}
 	return rt
 }
@@ -215,7 +218,7 @@ func (rt *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			what := r.URL.Path[i+len("/@v/"):]
 			if what == "list" {
-				if time.Since(info.ModTime()) >= ListExpire {
+				if time.Since(info.ModTime()) >= rt.cacheExpire {
 					log.Printf("------ --- %s [proxy]\n", r.URL)
 					rt.proxy.ServeHTTP(mw, r)
 					totalRequest.With(prometheus.Labels{"mode": "proxy", "status": mw.status()}).Inc()
