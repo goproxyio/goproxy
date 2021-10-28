@@ -40,19 +40,18 @@ import (
 )
 
 var downloadRoot string
-
-const listExpire = proxy.ListExpire
-
 var listen, promListen string
 var cacheDir string
 var proxyHost string
 var excludeHost string
+var cacheExpire time.Duration
 
 func init() {
 	flag.StringVar(&excludeHost, "exclude", "", "exclude host pattern, you can exclude internal Git services")
 	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for Go Modules, recommend use https://gopropxy.io")
 	flag.StringVar(&cacheDir, "cacheDir", "", "Go Modules cache dir, default is $GOPATH/pkg/mod/cache/download")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
+	flag.DurationVar(&cacheExpire, "cacheExpire", 5*time.Minute, "Go Modules cache expiration (min), default is 5 min")
 	flag.Parse()
 
 	if os.Getenv("GIT_TERMINAL_PROMPT") == "" {
@@ -89,6 +88,7 @@ func main() {
 			Pattern:      excludeHost,
 			Proxy:        proxyHost,
 			DownloadRoot: downloadRoot,
+			CacheExpire:  cacheExpire,
 		})}
 	} else {
 		handle = &logger{proxy.NewServer(new(ops))}
@@ -195,7 +195,7 @@ func (*ops) List(ctx context.Context, mpath string) (proxy.File, error) {
 		return nil, err
 	}
 	file := filepath.Join(downloadRoot, escMod, "@v", "list")
-	if info, err := os.Stat(file); err == nil && time.Since(info.ModTime()) < listExpire {
+	if info, err := os.Stat(file); err == nil && time.Since(info.ModTime()) < cacheExpire {
 		return os.Open(file)
 	}
 	var list struct {
