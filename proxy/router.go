@@ -115,6 +115,7 @@ func (router *Router) customModResponse(r *http.Response) error {
 			}
 		}
 		resp.Body = ioutil.NopCloser(bytes.NewReader(buf))
+
 		if buf != nil {
 			file := filepath.Join(router.opts.DownloadRoot, r.Request.URL.Path)
 			os.MkdirAll(path.Dir(file), os.ModePerm)
@@ -123,6 +124,13 @@ func (router *Router) customModResponse(r *http.Response) error {
 				return err
 			}
 		}
+
+		// requests from the client also need to be processed here,
+		// otherwise this 302 status will be sent to the client unchanged
+		r.StatusCode = http.StatusOK
+		resp.Header.Del("Content-Encoding")
+		resp.Header.Del("Content-Length")
+		r.Header = resp.Header
 	}
 	return nil
 }
