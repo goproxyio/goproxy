@@ -67,3 +67,7 @@ Use the -v flag to persisting the proxy module data (change ___cacheDir___ to yo
 
 1. set `export GOPROXY=http://localhost` to enable your goproxy.
 2. set `export GOPROXY=direct` to disable it.
+
+## Sponsors
+
+<img src="https://goproxy.io/images/sponsors/yzh_inc.png" width="200" />
