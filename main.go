@@ -48,7 +48,7 @@ var cacheExpire time.Duration
 
 func init() {
 	flag.StringVar(&excludeHost, "exclude", "", "exclude host pattern, you can exclude internal Git services")
-	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for Go Modules, recommend use https://gopropxy.io")
+	flag.StringVar(&proxyHost, "proxy", "", "next hop proxy for Go Modules, recommend use https://goproxy.io")
 	flag.StringVar(&cacheDir, "cacheDir", "", "Go Modules cache dir, default is $GOPATH/pkg/mod/cache/download")
 	flag.StringVar(&listen, "listen", "0.0.0.0:8081", "service listen address")
 	flag.DurationVar(&cacheExpire, "cacheExpire", 5*time.Minute, "Go Modules cache expiration (min), default is 5 min")
