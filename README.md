@@ -7,31 +7,37 @@
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Requirements
-    It invokes the local go command to answer requests.
-    The default cacheDir is GOPATH, you can set it up by yourself according to the situation.
+This service invokes the local `go` command to answer requests.
+
+The default `cacheDir` is `GOPATH`, you can set it up by yourself according to the situation.
 
 ## Build
-    git clone https://github.com/goproxyio/goproxy.git
-    cd goproxy
-    make
+
+```shell
+git clone https://github.com/goproxyio/goproxy.git
+cd goproxy
+make
+```
 
 ## Started
 
-
 ### Proxy mode    
 
-    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
+```shell
+./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test
+```
 
-If you run `go get -v pkg` in the proxy machine, should set a new GOPATH which is different from the old GOPATH, or mayebe deadlock.
-See the file test/get_test.sh.
+If you run `go get -v pkg` in the proxy machine, you should set a new `GOPATH` which is different from the original `GOPATH`, or you may encounter a deadlock.
+
+See [`test/get_test.sh`](./test/get_test.sh).
 
 ### Router mode    
 
-	./bin/goproxy -listen=0.0.0.0:80 -proxy https://goproxy.io
+```shell
+./bin/goproxy -listen=0.0.0.0:80 -proxy https://goproxy.io
+```
 
-Use the -proxy flag switch to "Router mode", which 
-implements route filter to routing private module 
-or public module .
+Use the `-proxy` flag combined with the `-exclude` flag to enable `Router mode`, which implements route filter to routing private modules or public modules.
 
 ```
                                          direct
@@ -45,28 +51,143 @@ go get  +-------> |goproxy| +-------> |goproxy.io| +---> golang.org/x/net
                  router mode           proxy mode
 ```
 
-In Router mode, use the -exclude flag set pattern , direct to the repo which 
-match the module path, pattern are matched to the full path specified, not only 
-to the host component.
+In `Router mode`, use the `-exclude` flag to set a glob pattern. The glob will specify what packages should not try to resolve with the value of `-proxy`. Modules which match the `-exclude` pattern will resolve direct to the repo which 
+matches the module path.
 
-    ./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test -proxy https://goproxy.io -exclude "*.corp.example.com,rsc.io/private"
+NOTE: Patterns are matched to the full path specified, not only to the host component.
+
+```shell
+./bin/goproxy -listen=0.0.0.0:80 -cacheDir=/tmp/test -proxy https://goproxy.io -exclude "*.corp.example.com,rsc.io/private"
+```
+
+### Private module authentication
+
+Some private modules are gated behind `git` authentication. To resolve this, you can force git to rewrite the URL with a personal access token present for auth
+
+```shell
+git config --global url."https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/".insteadOf https://github.com/
+```
+
+This can be done for other git providers as well, following the same pattern
 
 ## Use docker image
 
-    docker run -d -p80:8081 goproxy/goproxy
+```shell
+docker run -d -p80:8081 goproxy/goproxy
+```
 
 Use the -v flag to persisting the proxy module data (change ___cacheDir___ to your own dir):
 
-    docker run -d -p80:8081 -v cacheDir:/go goproxy/goproxy
+```
+docker run -d -p80:8081 -v cacheDir:/go goproxy/goproxy
+```
 
 ## Docker Compose
 
-    docker-compose up
+```shell
+docker-compose up
+```
+
+## Kubernetes
+
+Deployment:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: goproxy
+  name: goproxy
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: goproxy
+    spec:
+      containers:
+      - args:
+        - -proxy
+        - https://goproxy.io
+        - -listen
+        - 0.0.0.0:8081
+        - -cacheDir
+        - /tmp/test
+        - -exclude
+        - github.com/my-org/*
+        image: goproxy/goproxy
+        name: goproxy
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - mountPath: /tmp/test
+          name: goproxy
+      volumes:
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 500Mi
+        name: goproxy
+```
+
+Deployment (with gitconfig secret):
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: goproxy
+  name: goproxy
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: goproxy
+    spec:
+      containers:
+      - args:
+        - -proxy
+        - https://goproxy.io
+        - -listen
+        - 0.0.0.0:8081
+        - -cacheDir
+        - /tmp/test
+        - -exclude
+        - github.com/my-org/*
+        image: goproxy/goproxy
+        name: goproxy
+        ports:
+        - containerPort: 8081
+        volumeMounts:
+        - mountPath: /tmp/test
+          name: goproxy
+        - mountPath: /root
+          name: gitconfig
+          readOnly: true
+      volumes:
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 500Mi
+        name: goproxy
+      - name: gitconfig
+        secret:
+          secretName: gitconfig
+---
+apiVersion: v1
+data:
+  # NOTE: Encoded version of the following, replacing ${GITHUB_PERSONAL_ACCESS_TOKEN}
+  # [url "https://${GITHUB_PERSONAL_ACCESS_TOKEN}@github.com/"]
+  # insteadOf = https://github.com/
+  .gitconfig: *****************************
+kind: Secret
+metadata:
+  name: test
+```
 
 ## Appendix
 
-1. set `export GOPROXY=http://localhost` to enable your goproxy.
-2. set `export GOPROXY=direct` to disable it.
+- If running locally, set `export GOPROXY=http://localhost[:PORT]` to use your goproxy.
+- Set `export GOPROXY=direct` to directly access modules without your goproxy.
 
 ## Sponsors
 
