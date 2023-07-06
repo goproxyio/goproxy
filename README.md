@@ -7,6 +7,7 @@
 A global proxy for go modules. see: [https://goproxy.io](https://goproxy.io)
 
 ## Requirements
+
 This service invokes the local `go` command to answer requests.
 
 The default `cacheDir` is `GOPATH`, you can set it up by yourself according to the situation.
@@ -91,6 +92,7 @@ docker-compose up
 ## Kubernetes
 
 Deployment:
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -130,6 +132,7 @@ spec:
 ```
 
 Deployment (with gitconfig secret):
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
