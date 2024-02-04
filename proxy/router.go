@@ -71,7 +71,7 @@ func (router *Router) customModResponse(r *http.Response) error {
 		r.Body = ioutil.NopCloser(bytes.NewReader(buf))
 		if buf != nil {
 			file := filepath.Join(router.opts.DownloadRoot, r.Request.URL.Path)
-			os.MkdirAll(path.Dir(file), os.ModePerm)
+			os.MkdirAll(filepath.ToSlash(filepath.Dir(file)), os.ModePerm)
 			err = renameio.WriteFile(file, buf, 0666)
 			if err != nil {
 				return err
@@ -117,7 +117,7 @@ func (router *Router) customModResponse(r *http.Response) error {
 		resp.Body = ioutil.NopCloser(bytes.NewReader(buf))
 		if buf != nil {
 			file := filepath.Join(router.opts.DownloadRoot, r.Request.URL.Path)
-			os.MkdirAll(path.Dir(file), os.ModePerm)
+			os.MkdirAll(filepath.ToSlash(filepath.Dir(file)), os.ModePerm)
 			err = renameio.WriteFile(file, buf, 0666)
 			if err != nil {
 				return err
