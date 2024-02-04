@@ -191,7 +191,3 @@ metadata:
 
 - If running locally, set `export GOPROXY=http://localhost[:PORT]` to use your goproxy.
 - Set `export GOPROXY=direct` to directly access modules without your goproxy.
-
-## Sponsors
-
-<img src="https://goproxy.io/images/sponsors/yzh_inc.png" width="200" />
